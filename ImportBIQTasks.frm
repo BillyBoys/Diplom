@@ -13,6 +13,7 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
+
 'Названия полей в MS Project
 Dim projectField_Name         As Long
 Dim projectField_JirID        As Long
@@ -26,23 +27,23 @@ Dim projectField_Start        As Long
 Dim projectField_ITService    As Long
 Dim projectField_TypeWork     As Long
 
-Dim TSV As TimeScaleValues
-Dim pTSV As TimeScaleValues
-Dim resAssArr   As Assignments
+Dim TSV               As TimeScaleValues
+Dim pTSV              As TimeScaleValues
+Dim resAssArr         As Assignments
 Dim resFilteredTask() As Task
-Dim assTaskLoop As Task
-Dim resAss As Assignment
-Dim assTask As Task
-Dim Res As Resource
-Dim SecRes As Resource
-Dim AllRes As Resources
-Dim taskTime As Variant
-Dim arrTime As Variant
+Dim assTaskLoop       As Task
+Dim resAss            As Assignment
+Dim assTask           As Task
+Dim Res               As Resource
+Dim SecRes            As Resource
+Dim AllRes            As Resources
+Dim taskTime          As Variant
+Dim arrTime           As Variant
 
-Dim IndexTaskFirst   As Long
-Dim IndexTaskLast    As Long
-Dim Index            As Long
-Dim StartDate        As Date
+Dim IndexTaskFirst    As Long
+Dim IndexTaskLast     As Long
+Dim Index             As Long
+'Dim StartDate         As Date
 
 Private Sub HoursRes_Click()
 
@@ -75,14 +76,13 @@ End Sub
 ' Кнопка импортировать
 Private Sub ImportButton_Click()
 
-    StartDate = CDate(tbStartDate.Value)
     ' Создаем задачи по оценке ЦФТ
     If Len(Trim(FileNameCFTTextBox.Text)) <> 0 Then
-        Call CreateTasksByExcel(FileNameCFTTextBox.Text)
+        Call CreateTasksByExcel(TBNumBIQ, CDate(tbStartDate.Value), FileNameCFTTextBox.Text)
     End If
     ' Создаем задачи по оценки БИСквит
     If Len(Trim(FileNameBISTextBox.Text)) <> 0 Then
-        Call CreateTasksByExcel(FileNameBISTextBox.Text)
+        Call CreateTasksByExcel(TBNumBIQ, CDate(tbStartDate.Value), FileNameBISTextBox.Text)
     End If
     
 End Sub
@@ -90,14 +90,14 @@ End Sub
 ' Инициализация полей
 Private Sub UserForm_Initialize()
     tbStartDate = Format(Date, "dd/mm/yyyy")
-    TBNumBIQ = 5257
+    TBNumBIQ = "BIQ-5257"
     'FileNameCFTTextBox = "C:\Users\Эрнест\Documents\GitHub\Diplom\Расшифровка ЭО BIQ5257.xlsx"
-    FileNameCFTTextBox = "D:\info\Эрнест\20200113\Расшифровка ЭО BIQ5257.xlsx"
+    FileNameCFTTextBox = "d:\info\Эрнест\git\Diplom\Расшифровка ЭО BIQ5257.xlsx"
     TBNumBIQFDelete = 5257
 End Sub
 
 ' Создание задач по оценке
-Sub CreateTasksByExcel(ExcelFileName)
+Sub CreateTasksByExcel(NumBIQ, StartDate, ExcelFileName)
     
     Dim BiqTask As Task ' Для поиска задачи по BIQ
     ' Получаем название полей в MS Project
@@ -105,31 +105,25 @@ Sub CreateTasksByExcel(ExcelFileName)
     ' Открываем оценку для чтения этапов разработки
     PathToExc = ExcelFileName
     Set xlobject = CreateObject("Excel.Application")
-    
     xlobject.Workbooks.Open PathToExc
-    
+		
+		' Если не удалось открыть, то выходим
     If xlobject.ActiveWorkbook Is Nothing Then
         Exit Sub
     End If
     
-    Set ws1 = xlobject.ActiveWorkbook.Sheets(1)
-    Set ws2 = xlobject.ActiveWorkbook.Sheets(4)
-    ' Получаем данные о задаче
-    BIQName = ws1.Cells(1, 3) 'Название BIQ
-    BIQNum = "BIQ-" + TBNumBIQ  'Номер BIQ
+		'Интересует 4 лист оценки - технический лист для данного функционала
+    Set ExcelSheet = xlobject.ActiveWorkbook.Sheets(4)
     
-    If ws1.Cells(2, 3) = "ЦФТ" Then 'Определение оцениваемой системы
-        TaskType = "JIRACFT" 'Оцениваемая система ЦФТ
-        ITService = "25" 'ИТ-Сервис
-    Else
-        TaskType = "JIRABIS" 'Оцениваемая система БИС
-        ITService = "25" 'ИТ-Сервис
-    End If
+		' Получаем данные о задаче
+    BIQName   = ExcelSheet.Cells(1, 3) 'Название BIQ
+		TaskType  = ExcelSheet.Cells(2, 4) 'Оцениваемая система ЦФТ
+		ITService = ExcelSheet.Cells(2, 5) 'ИТ-Сервис
     
     'Пытаемся найти главную задачу по BIQ
     BIQTaskId = 0
     For Each BiqTask In ActiveProject.Tasks
-        If BiqTask.GetField(FieldID:=projectField_JirID) = BIQNum Then
+        If BiqTask.GetField(FieldID:=projectField_JirID) = NumBIQ Then
            BIQTaskId = BiqTask.id
         End If
     Next BiqTask
@@ -137,27 +131,27 @@ Sub CreateTasksByExcel(ExcelFileName)
     Index = 1
     If BIQTaskId = 0 Then
         'Если не нашли то создаем главную задачу по BIQ
-        Call AddNewTask(True, False, BIQNum, TaskType, BIQName, "", 0, False, "", "", "")
+        Call AddNewTask(True, False, StartDate, NumBIQ, TaskType, BIQName, "", 0, False, "", "", "")
         'Создаем подзадачу для системы
-        Call AddNewTask(False, True, "", TaskType, BIQName, "", 0, False, ITService, "", "")
+        Call AddNewTask(False, True, StartDate, "", TaskType, BIQName, "", 0, False, ITService, "", "")
     Else
         'Создаем подзадачу для системы
-        Call AddNewTask(False, False, "", TaskType, BIQName, "", BIQTaskId, False, ITService, "", "")
+        Call AddNewTask(False, False, StartDate, "", TaskType, BIQName, "", BIQTaskId, False, ITService, "", "")
     End If
     
     FirstTask = True
     For i = 8 To 26
        'Пропускаем строчки Итого и с пустым наименованием
-        If (UCase(Left(Trim(ws2.Cells(i, 3)), 5))) <> "ИТОГО" And Len(Trim(ws2.Cells(i, 3))) <> 0 Then
-            TypeWork = ws2.Cells(i, 5) 'Тип работ
-            TaskActor = ws2.Cells(i, 6) 'Исполнитель
-            TaskName = Trim(ws2.Cells(i, 3)) 'Имя задачи
+        If (UCase(Left(Trim(ExcelSheet.Cells(i, 3)), 5))) <> "ИТОГО" And Len(Trim(ExcelSheet.Cells(i, 3))) <> 0 Then
+            TypeWork = ExcelSheet.Cells(i, 5) 'Тип работ
+            TaskActor = ExcelSheet.Cells(i, 6) 'Исполнитель
+            TaskName = Trim(ExcelSheet.Cells(i, 3)) 'Имя задачи
             Parenthesis = InStr(1, TaskName, "(") 'Наличие круглой скобкой
             If Parenthesis Then
                 TaskName = Trim(Mid(TaskName, 1, Parenthesis - 1)) 'Название задачи
             End If
-            TaskHours = ws2.Cells(i, 7) 'Время задачи
-            Call AddNewTask(False, FirstTask, "", TaskType, TaskName, TaskHours, BIQTaskId, True, ITService, TypeWork, TaskActor)
+            TaskHours = ExcelSheet.Cells(i, 7) 'Время задачи
+            Call AddNewTask(False, FirstTask, StartDate, "", TaskType, TaskName, TaskHours, BIQTaskId, True, ITService, TypeWork, TaskActor)
             ' Для первой задачи делаем отступ
             If FirstTask Then
                 FirstTask = False
@@ -165,26 +159,26 @@ Sub CreateTasksByExcel(ExcelFileName)
         End If
     Next i
 		'функция заполнения предшественников
-    Call TaskPredInPut(ws2)
+    Call TaskPredInPut(ExcelSheet, StartDate)
     xlobject.Quit 'Закрытие Excel файла
     
 End Sub
 
 'функция заполнения предшественников
-Sub TaskPredInPut(ws2)  
+Sub TaskPredInPut(ExcelSheet, BiqStartDate)  
 
     i = 8
     Dim BiqTask As Task
     For Each BiqTask In ActiveProject.Tasks
         If (BiqTask.id >= IndexTaskFirst And BiqTask.id <= IndexTaskLast) Then
-            Do Until ws2.Cells(i, 3) <> ""
+            Do Until ExcelSheet.Cells(i, 3) <> ""
                 i = i + 1
             Loop
-            TaskPredecessors = ws2.Cells(i, 4) 'Предешественник
+            TaskPredecessors = ExcelSheet.Cells(i, 4) 'Предешественник
             If TaskPredecessors <> "" Then
                 TaskPredecessors = DelPred(TaskPredecessors)
             Else
-                BiqTask.SetField FieldID:=projectField_Start, Value:=StartDate
+                BiqTask.SetField FieldID:=projectField_Start, Value:=BiqStartDate
             End If
             BiqTask.SetField FieldID:=projectField_Predecessors, Value:=TaskPredecessors
             i = i + 1
@@ -295,7 +289,7 @@ Public Function DelPred(TaskPredecessors) As String
 End Function
 
 ' Создание задачи в MS Project
-Sub AddNewTask(MainTask, FirstTask, TaskJiraId, TaskType, TaskName, TaskHours, BIQTaskId, ToTaskDays, TaskTypeITService, TaskTypeWork, TaskActor)
+Sub AddNewTask(MainTask, FirstTask, BiqStartDate, TaskJiraId, TaskType, TaskName, TaskHours, BIQTaskId, ToTaskDays, TaskTypeITService, TaskTypeWork, TaskActor)
     
     ' Создаем задачу
     If BIQTaskId = 0 Then
@@ -321,34 +315,35 @@ Sub AddNewTask(MainTask, FirstTask, TaskJiraId, TaskType, TaskName, TaskHours, B
         NewTask.SetField FieldID:=projectField_DurationDays, Value:=WorksheetFunction.RoundUp(((Val(TaskHours)) / 8), 0)
         ' Для первой задачи предшествиника не заполняем
         If FirstTask Then
-            NewTask.SetField FieldID:=projectField_Start, Value:=StartDate
+            NewTask.SetField FieldID:=projectField_Start, Value:=BiqStartDate
             IndexTaskFirst = NewTask.id 'Первый индекс
         Else
             IndexTaskLast = NewTask.id 'Последний индекс
         End If
     End If
-    NewTask.SetField FieldID:=projectField_ITService, Value:=TaskTypeITService
-    NewTask.SetField FieldID:=projectField_Cost, Value:=TaskHours
+		'Сохраняем поля описания задачи
+    NewTask.SetField FieldID:=projectField_ITService   , Value:=TaskTypeITService
+    NewTask.SetField FieldID:=projectField_Cost        , Value:=TaskHours
     NewTask.SetField FieldID:=projectField_JiraProjName, Value:=TaskType
-    NewTask.SetField FieldID:=projectField_TypeWork, Value:=TaskTypeWork
-    NewTask.SetField FieldID:=projectField_Actor, Value:=TaskActor
+    NewTask.SetField FieldID:=projectField_TypeWork    , Value:=TaskTypeWork
+    NewTask.SetField FieldID:=projectField_Actor       , Value:=TaskActor
     
 End Sub
 
 ' Получаем название полей в MS Project
 Sub InitFieldConst()
 
-    projectField_Name = FieldNameToFieldConstant("Название", pjProject)
-    projectField_JirID = FieldNameToFieldConstant("Jira id", pjProject)
-    projectField_Cost = FieldNameToFieldConstant("Трудозатраты", pjProject)
-    projectField_Actor = FieldNameToFieldConstant("Названия ресурсов", pjProject)
+    projectField_Name         = FieldNameToFieldConstant("Название", pjProject)
+    projectField_JirID        = FieldNameToFieldConstant("Jira id", pjProject)
+    projectField_Cost         = FieldNameToFieldConstant("Трудозатраты", pjProject)
+    projectField_Actor        = FieldNameToFieldConstant("Названия ресурсов", pjProject)
     projectField_DurationDays = FieldNameToFieldConstant("Длительность", pjProject)
-    projectField_Restrict = FieldNameToFieldConstant("Тип ограничения", pjProject)
+    projectField_Restrict     = FieldNameToFieldConstant("Тип ограничения", pjProject)
     projectField_JiraProjName = FieldNameToFieldConstant("Имя проекта", pjProject)
     projectField_Predecessors = FieldNameToFieldConstant("Предшественники", pjProject)
-    projectField_Start = FieldNameToFieldConstant("Начало", pjProject)
-    projectField_ITService = FieldNameToFieldConstant("ИТ-Сервис", pjProject)
-    projectField_TypeWork = FieldNameToFieldConstant("Тип работ", pjProject)
+    projectField_Start        = FieldNameToFieldConstant("Начало", pjProject)
+    projectField_ITService    = FieldNameToFieldConstant("ИТ-Сервис", pjProject)
+    projectField_TypeWork     = FieldNameToFieldConstant("Тип работ", pjProject)
   
 End Sub
 
