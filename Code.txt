@@ -1,4 +1,4 @@
-'Названия полей в MS Project
+﻿'Названия полей в MS Project
 Dim projectField_Name         As Long
 Dim projectField_JirID        As Long
 Dim projectField_Cost         As Long
@@ -79,7 +79,7 @@ End Sub
 Private Sub UserForm_Initialize()
     tbStartDate = Format(Date, "dd/mm/yyyy")
     TBNumBIQ = 5257
-    FileNameCFTTextBox = "C:\Users\Эрнест\Desktop\УЧЕБА\Диплом\20191224\Расшифровка ЭО BIQ5257.xlsx"
+    FileNameCFTTextBox = "C:\Users\Эрнест\Documents\GitHub\Diplom\Расшифровка ЭО BIQ5257.xlsx"
     'FileNameCFTTextBox = "D:\info\Эрнест\20191217\Расшифровка ЭО BIQ5257.xlsx"
     TBNumBIQFDelete = 5257
 End Sub
@@ -421,24 +421,35 @@ End Sub
 
 Sub Perest()
   
-    Set AllRes = ActiveProject.Resources
     
+    Set AllRes = ActiveProject.Resources
     For Each Res In AllRes
         Set resAssArr = Res.Assignments
         '1
         For Each resAss In resAssArr
             Set assTask = resAss.Task
             DurationWorkDaysPerest = assTask.DurationText 'Длительность в рабочих днях
-            StartDatePerest = assTask.StartText 'Дата начала задачи
+            StartDatePerest = Mid(Mid(assTask.StartText, 4), 1, 6) & "20" & Mid(assTask.StartText, 10) 'Дата начала задачи
+            FinishDatePerest = Mid(Mid(assTask.FinishText, 4), 1, 6) & "20" & Mid(assTask.FinishText, 10) 'Дата конца задачи
             TimePerest = assTask.TimeScaleData(assTask.Start, assTask.Finish, TimescaleUnit:=4)(1).Value / (60) 'Нагрузку часов в день
+            
             CurrenRes = -1
             CurrentStartDate = "31.12.2040"
             GroupFirstRes = Res.Group
             For Each SecRes In AllRes
                 '2
+                SecData = StartDatePerest
+                i = 0
+                Do
+                    HoursDay = assTask.TimeScaleData(SecData, SecData, TimescaleUnit:=4)(1).Value / (60)
+                    i = i + 1
+                    If i < 5 Then
+                        
+                    End If
+                    SecData = DateAdd("d", 1, SecData)
+                Loop Until SecData < FinishDatePerest
             Next SecRes
             
         Next resAss
     Next Res
-
 End Sub
