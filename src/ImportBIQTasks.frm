@@ -13,7 +13,6 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
-
 'Названия полей в MS Project
 Dim projectField_Name         As Long
 Dim projectField_JirID        As Long
@@ -99,8 +98,8 @@ End Sub
 Private Sub UserForm_Initialize()
     tbStartDate = Format(Date, "dd/mm/yyyy")
     TBNumBIQ = "BIQ-5257"
-    'FileNameCFTTextBox = "C:\Users\Эрнест\Documents\GitHub\Diplom\Расшифровка ЭО BIQ5257.xlsx"
-    FileNameCFTTextBox = "d:\info\Эрнест\Diplom\test\Расшифровка ЭО BIQ5257.xlsx"
+    FileNameCFTTextBox = "C:\Users\Эрнест\Documents\GitHub\Diplom\test\Расшифровка ЭО BIQ5257.xlsx"
+    'FileNameCFTTextBox = "d:\info\Эрнест\Diplom\test\Расшифровка ЭО BIQ5257.xlsx"
     TBNumBIQFDelete = 5257
 End Sub
 
@@ -114,25 +113,25 @@ Sub CreateTasksByExcel(NumBIQ, StartDate, ExcelFileName)
     PathToExc = ExcelFileName
     Set xlobject = CreateObject("Excel.Application")
     xlobject.Workbooks.Open PathToExc
-		
-		' Если не удалось открыть, то выходим
+                
+                ' Если не удалось открыть, то выходим
     If xlobject.ActiveWorkbook Is Nothing Then
         Exit Sub
     End If
     
-		'Интересует 4 лист оценки - технический лист для данного функционала
+                'Интересует 4 лист оценки - технический лист для данного функционала
     Set ExcelSheet = xlobject.ActiveWorkbook.Sheets(4)
     
-		' Получаем данные о задаче
-    BIQName    = ExcelSheet.Cells(1, 3) 'Название BIQ
-		SystemCode = ExcelSheet.Cells(2, 3) 'Система
-		TaskType   = ExcelSheet.Cells(2, 4) 'Оцениваемая система ЦФТ
-		ITService  = ExcelSheet.Cells(2, 5) 'ИТ-Сервис
-		TaskGroup  = ExcelSheet.Cells(1, 2) 'Группа
-		FuncArea   = ExcelSheet.Cells(2, 2) 'Функциональная область
-		TaskTeg    = ExcelSheet.Cells(3, 2) 'Тэг
-    
-    'Пытаемся найти главную задачу по BIQ
+                ' Получаем данные о задаче
+    BIQName = ExcelSheet.Cells(1, 3)    'Название BIQ
+    SystemCode = ExcelSheet.Cells(2, 3) 'Система
+    TaskType = ExcelSheet.Cells(2, 4)   'Оцениваемая система ЦФТ
+    ITService = ExcelSheet.Cells(2, 5)  'ИТ-Сервис
+    TaskGroupCK = ExcelSheet.Cells(1, 2)  'Группа
+    FuncArea = ExcelSheet.Cells(2, 2)   'Функциональная область
+    TaskTeg = ExcelSheet.Cells(3, 2)    'Тэг
+
+                'Пытаемся найти главную задачу по BIQ
     BIQTaskId = 0
     For Each BiqTask In ActiveProject.Tasks
         If BiqTask.GetField(FieldID:=projectField_JirID) = NumBIQ Then
@@ -170,30 +169,55 @@ Sub CreateTasksByExcel(NumBIQ, StartDate, ExcelFileName)
             End If
         End If
     Next i
-		'функция заполнения предшественников
+                'функция заполнения предшественников
     Call TaskPredInPut(ExcelSheet, StartDate)
+    
+                'Заполняем исполнителей
+    Call FillResourses(ExcelSheet, TaskGroupCK, FuncArea, TaskTeg, SystemCode)
+    
     xlobject.Quit 'Закрытие Excel файла
-		
-		' Заполняем исполнителей
-		Call FillResourses(ExcelSheet, IndexTaskFirst, IndexTaskLast, TaskGroup, FuncArea, TaskTeg, SystemCode)
     
 End Sub
 
 'функция назначения исполнителей
-Sub FillResourses(ExcelSheet, IndexTaskFirst, IndexTaskLast, TaskGroup, FuncArea, TaskTeg, SystemCode) 
+Sub FillResourses(ExcelSheet, TaskGroupCK, FuncArea, TaskTeg, SystemCode)
+   
+    i = 8
     Dim BiqTask As Task
-		'Бежим по всем задачам попадающим в интервал
+    Set AllRes = ActiveProject.Resources
+    'бежим по всем ресурсам
     For Each BiqTask In ActiveProject.Tasks
-			If (BiqTask.id >= IndexTaskFirst And BiqTask.id <= IndexTaskLast) Then
-				'Получаем группу ресурсов 
-				ResGroup = BiqTask.GetField(FieldID:=projectField_Actor)
-				
-			End If
+       If (BiqTask.id >= IndexTaskFirst And BiqTask.id <= IndexTaskLast) Then
+                            'Получаем группу ресурсов
+            Do While ExcelSheet.Cells(i, 7) = 0
+                If i = 30 Then
+                    Exit Do
+                End If
+                i = i + 1
+            Loop
+            TaskActor = ExcelSheet.Cells(i, 6)
+            TaskGroup = Mid(ExcelSheet.Cells(i, 9), 1, Len(ExcelSheet.Cells(i, 9)) - 1)
+            Buffer = TaskActor
+            For Each Res In AllRes
+                If (Res.GetField(FieldID:=projectField_ResGroupCk) = TaskGroupCK) And (TaskTeg = "" Or Res.GetField(FieldID:=projectField_ResGroupCk) = TaskTeg) Then
+                    If (Res.GetField(FieldID:=projectField_FuncArea1) = FuncArea) Or (Res.GetField(FieldID:=projectField_FuncArea2) = FuncArea) Or (Res.GetField(FieldID:=projectField_FuncArea3) = FuncArea) Then
+                        If (Res.GetField(FieldID:=projectField_System1) = SystemCode) Or (Res.GetField(FieldID:=projectField_System2) = SystemCode) Then
+                            If (Res.GetField(FieldID:=projectField_ResGroup) = TaskGroup) Then
+                                Buffer = Res.name + Mid(Buffer, InStr(Buffer, "["))
+                            End If
+                        End If
+                    End If
+                End If
+            Next Res
+            BiqTask.SetField FieldID:=projectField_Actor, Value:=Buffer
+            i = i + 1
+        End If
     Next BiqTask
+    
 End Sub
 
 'функция заполнения предшественников
-Sub TaskPredInPut(ExcelSheet, BiqStartDate)  
+Sub TaskPredInPut(ExcelSheet, BiqStartDate)
 
     i = 8
     Dim BiqTask As Task
@@ -212,13 +236,13 @@ Sub TaskPredInPut(ExcelSheet, BiqStartDate)
             i = i + 1
         End If
     Next BiqTask
-		'Функция замены предшественников
-    Zerotasksdel 
+                'Функция замены предшественников
+    Zerotasksdel
     
 End Sub
 
 'Функция замены у потомков
-Sub Zerotasksdel() 
+Sub Zerotasksdel()
             
     Dim BiqTask As Task
     Dim BiqTaskSecond As Task
@@ -234,13 +258,13 @@ Sub Zerotasksdel()
             End If
         End If
     Next BiqTask
-		'Удаление всех задач с нулем часов
-    DeleteAllZeroTasks 
+                'Удаление всех задач с нулем часов
+    DeleteAllZeroTasks
     
 End Sub
 
 'Функция замены у потомков 2
-Sub RepCycPred(TempZeroTaskID, TempPredec) 
+Sub RepCycPred(TempZeroTaskID, TempPredec)
 
     Dim BiqTask As Task
 
@@ -275,7 +299,7 @@ Sub RepCycPred(TempZeroTaskID, TempPredec)
 End Sub
 
 'функция изменения сложных предшественников
-Public Function DelPred(TaskPredecessors) As String 
+Public Function DelPred(TaskPredecessors) As String
 
     Delim = InStr(1, TaskPredecessors, ";")
     NewPredecessors = ""
@@ -349,37 +373,37 @@ Sub AddNewTask(MainTask, FirstTask, BiqStartDate, TaskJiraId, TaskType, TaskName
             IndexTaskLast = NewTask.id 'Последний индекс
         End If
     End If
-		'Сохраняем поля описания задачи
-    NewTask.SetField FieldID:=projectField_ITService   , Value:=TaskTypeITService
-    NewTask.SetField FieldID:=projectField_Cost        , Value:=TaskHours
+                'Сохраняем поля описания задачи
+    NewTask.SetField FieldID:=projectField_ITService, Value:=TaskTypeITService
+    NewTask.SetField FieldID:=projectField_Cost, Value:=TaskHours
     NewTask.SetField FieldID:=projectField_JiraProjName, Value:=TaskType
-    NewTask.SetField FieldID:=projectField_TypeWork    , Value:=TaskTypeWork
-    NewTask.SetField FieldID:=projectField_Actor       , Value:=TaskActor
+    NewTask.SetField FieldID:=projectField_TypeWork, Value:=TaskTypeWork
+    NewTask.SetField FieldID:=projectField_Actor, Value:=TaskActor
     
 End Sub
 
 ' Получаем название полей в MS Project
 Sub InitFieldConst()
 
-    projectField_Name         = FieldNameToFieldConstant("Название", pjProject)
-    projectField_JirID        = FieldNameToFieldConstant("Jira id", pjProject)
-    projectField_Cost         = FieldNameToFieldConstant("Трудозатраты", pjProject)
-    projectField_Actor        = FieldNameToFieldConstant("Названия ресурсов", pjProject)
+    projectField_Name = FieldNameToFieldConstant("Название", pjProject)
+    projectField_JirID = FieldNameToFieldConstant("Jira id", pjProject)
+    projectField_Cost = FieldNameToFieldConstant("Трудозатраты", pjProject)
+    projectField_Actor = FieldNameToFieldConstant("Названия ресурсов", pjProject)
     projectField_DurationDays = FieldNameToFieldConstant("Длительность", pjProject)
-    projectField_Restrict     = FieldNameToFieldConstant("Тип ограничения", pjProject)
+    projectField_Restrict = FieldNameToFieldConstant("Тип ограничения", pjProject)
     projectField_JiraProjName = FieldNameToFieldConstant("Имя проекта", pjProject)
     projectField_Predecessors = FieldNameToFieldConstant("Предшественники", pjProject)
-    projectField_Start        = FieldNameToFieldConstant("Начало", pjProject)
-    projectField_ITService    = FieldNameToFieldConstant("ИТ-Сервис", pjProject)
-    projectField_TypeWork     = FieldNameToFieldConstant("Тип работ", pjProject)
-    projectField_Teg          = FieldNameToFieldConstant("Тэг", pjProject)
-    projectField_ResGroup     = FieldNameToFieldConstant("Группа", pjProject)
-    projectField_ResGroupCk   = FieldNameToFieldConstant("Группа ЦК", pjProject)
-    projectField_FuncArea1    = FieldNameToFieldConstant("функ. Область 1", pjProject)
-    projectField_FuncArea2    = FieldNameToFieldConstant("Функ. Область 2", pjProject)
-    projectField_FuncArea3    = FieldNameToFieldConstant("Функ. Область 3", pjProject)
-		projectField_System1      = FieldNameToFieldConstant("Система 1", pjProject)
-		projectField_System2      = FieldNameToFieldConstant("Система 2", pjProject)
+    projectField_Start = FieldNameToFieldConstant("Начало", pjProject)
+    projectField_ITService = FieldNameToFieldConstant("ИТ-Сервис", pjProject)
+    projectField_TypeWork = FieldNameToFieldConstant("Тип работ", pjProject)
+    projectField_Teg = FieldNameToFieldConstant("Тэг", pjResource)
+    projectField_ResGroup = FieldNameToFieldConstant("Группа", pjResource)
+    projectField_ResGroupCk = FieldNameToFieldConstant("Группа ЦК", pjResource)
+    projectField_FuncArea1 = FieldNameToFieldConstant("функ. Область 1", pjResource)
+    projectField_FuncArea2 = FieldNameToFieldConstant("Функ. Область 2", pjResource)
+    projectField_FuncArea3 = FieldNameToFieldConstant("Функ. Область 3", pjResource)
+    projectField_System1 = FieldNameToFieldConstant("Система 1", pjResource)
+    projectField_System2 = FieldNameToFieldConstant("Система 2", pjResource)
   
 End Sub
 
@@ -432,7 +456,7 @@ Sub DeleteLastZeroHours()
         If IndexBIQ = BIQTaskId Then
             If (BiqTask.id >= IndexTaskFirst And BiqTask.id <= IndexTaskLast) Then
                 BiqTask.Delete 'Удаление BIQ-задачи
-								IndexTaskLast = IndexTaskLast - 1
+                IndexTaskLast = IndexTaskLast - 1
             End If
         End If
     Next BiqTask
@@ -447,6 +471,7 @@ Sub DeleteAllZeroTasks()
         If BiqTask.GetField(FieldID:=projectField_Cost) = "0 ч" Then
             If (BiqTask.id >= IndexTaskFirst And BiqTask.id <= IndexTaskLast) Then
                 BiqTask.Delete 'Удаление BIQ-задачи
+                IndexTaskLast = IndexTaskLast - 1
             End If
         End If
     Next BiqTask
@@ -474,8 +499,7 @@ End Sub
 
 ' Растягивание задачи в зависимости от загрузки ресурсов
 Sub Perest()
-  
-    
+      
     Set AllRes = ActiveProject.Resources
     For Each Res In AllRes
         Set resAssArr = Res.Assignments
@@ -486,7 +510,6 @@ Sub Perest()
             StartDatePerest = Mid(Mid(assTask.StartText, 4), 1, 6) & "20" & Mid(assTask.StartText, 10) 'Дата начала задачи
             FinishDatePerest = Mid(Mid(assTask.FinishText, 4), 1, 6) & "20" & Mid(assTask.FinishText, 10) 'Дата конца задачи
             TimePerest = assTask.TimeScaleData(assTask.Start, assTask.Finish, TimescaleUnit:=4)(1).Value / (60) 'Нагрузку часов в день
-            
             CurrenRes = -1
             CurrentStartDate = "31.12.2040"
             GroupFirstRes = Res.Group
@@ -503,7 +526,6 @@ Sub Perest()
                     SecData = DateAdd("d", 1, SecData)
                 Loop Until SecData < FinishDatePerest
             Next SecRes
-            
         Next resAss
     Next Res
 End Sub
