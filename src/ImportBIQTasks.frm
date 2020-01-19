@@ -14,6 +14,7 @@ Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
 
+
 'Названия полей в MS Project
 Dim projectField_Name         As Long
 Dim projectField_JirID        As Long
@@ -174,44 +175,31 @@ Sub CreateTasksByExcel(NumBIQ, StartDate, ExcelFileName)
     Call TaskPredInPut(ExcelSheet, StartDate)
     
                 'Заполняем исполнителей
-    Call FillResourses(ExcelSheet, TaskGroupCK, FuncArea, TaskTeg, SystemCode)
+    Call FillResourses(TaskGroupCK, FuncArea, TaskTeg, SystemCode)
     
     xlobject.Quit 'Закрытие Excel файла
     
 End Sub
 
 'функция назначения исполнителей
-Sub FillResourses(ExcelSheet, TaskGroupCK, FuncArea, TaskTeg, SystemCode)
+Sub FillResourses(TaskGroupCK, FuncArea, TaskTeg, SystemCode)
    
-    i = 8
     Dim BiqTask As Task
     Set AllRes = ActiveProject.Resources
-    'бежим по всем ресурсам
+                            'бежим по всем ресурсам
     For Each BiqTask In ActiveProject.Tasks
        If (BiqTask.id >= IndexTaskFirst And BiqTask.id <= IndexTaskLast) Then
                             'Получаем группу ресурсов
-            Do While ExcelSheet.Cells(i, 7) = 0
-                If i = 30 Then
-                    Exit Do
-                End If
-                i = i + 1
-            Loop
-            TaskActor = ExcelSheet.Cells(i, 6)
-            TaskGroup = Mid(ExcelSheet.Cells(i, 9), 1, Len(ExcelSheet.Cells(i, 9)) - 1)
-            Buffer = TaskActor
+            TaskActor = BiqTask.GetField(FieldID:=projectField_Actor)
             For Each Res In AllRes
-                If (Res.GetField(FieldID:=projectField_ResGroupCk) = TaskGroupCK) And (TaskTeg = "" Or Res.GetField(FieldID:=projectField_ResGroupCk) = TaskTeg) Then
-                    If (Res.GetField(FieldID:=projectField_FuncArea1) = FuncArea) Or (Res.GetField(FieldID:=projectField_FuncArea2) = FuncArea) Or (Res.GetField(FieldID:=projectField_FuncArea3) = FuncArea) Then
-                        If (Res.GetField(FieldID:=projectField_System1) = SystemCode) Or (Res.GetField(FieldID:=projectField_System2) = SystemCode) Then
-                            If (Res.GetField(FieldID:=projectField_ResGroup) = TaskGroup) Then
-                                Buffer = Res.name + Mid(Buffer, InStr(Buffer, "["))
-                            End If
-                        End If
-                    End If
+                If (Res.GetField(FieldID:=projectField_ResGroupCk) = TaskGroupCK) And (TaskTeg = "" Or Res.GetField(FieldID:=projectField_Teg) = TaskTeg) _
+                And ((Res.GetField(FieldID:=projectField_FuncArea1) = FuncArea) Or (Res.GetField(FieldID:=projectField_FuncArea2) = FuncArea) Or (Res.GetField(FieldID:=projectField_FuncArea3) = FuncArea)) _
+                And ((Res.GetField(FieldID:=projectField_System1) = SystemCode) Or (Res.GetField(FieldID:=projectField_System2) = SystemCode)) _
+                And ((Res.GetField(FieldID:=projectField_ResGroup) = Mid(TaskActor, 1, InStr(TaskActor, "[") - 1))) Then
+                    TaskActor = Res.name + Mid(TaskActor, InStr(TaskActor, "["))
                 End If
             Next Res
-            BiqTask.SetField FieldID:=projectField_Actor, Value:=Buffer
-            i = i + 1
+            BiqTask.SetField FieldID:=projectField_Actor, Value:=TaskActor
         End If
     Next BiqTask
     
