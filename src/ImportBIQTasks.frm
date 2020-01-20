@@ -50,7 +50,7 @@ Dim arrTime           As Variant
 
 Dim IndexTaskFirst    As Long
 Dim IndexTaskLast     As Long
-Dim Index             As Long
+'Dim Index             As Long
 'Dim StartDate         As Date
 
 Private Sub HoursRes_Click()
@@ -115,15 +115,15 @@ Sub CreateTasksByExcel(NumBIQ, StartDate, ExcelFileName)
     Set xlobject = CreateObject("Excel.Application")
     xlobject.Workbooks.Open PathToExc
                 
-                ' Если не удалось открыть, то выходим
+    ' Если не удалось открыть, то выходим
     If xlobject.ActiveWorkbook Is Nothing Then
         Exit Sub
     End If
     
-                'Интересует 4 лист оценки - технический лист для данного функционала
+    'Интересует 4 лист оценки - технический лист для данного функционала
     Set ExcelSheet = xlobject.ActiveWorkbook.Sheets(4)
     
-                ' Получаем данные о задаче
+    ' Получаем данные о задаче
     BIQName = ExcelSheet.Cells(1, 3)    'Название BIQ
     SystemCode = ExcelSheet.Cells(2, 3) 'Система
     TaskType = ExcelSheet.Cells(2, 4)   'Оцениваемая система ЦФТ
@@ -132,7 +132,7 @@ Sub CreateTasksByExcel(NumBIQ, StartDate, ExcelFileName)
     FuncArea = ExcelSheet.Cells(2, 2)   'Функциональная область
     TaskTeg = ExcelSheet.Cells(3, 2)    'Тэг
 
-                'Пытаемся найти главную задачу по BIQ
+    'Пытаемся найти главную задачу по BIQ
     BIQTaskId = 0
     For Each BiqTask In ActiveProject.Tasks
         If BiqTask.GetField(FieldID:=projectField_JirID) = NumBIQ Then
@@ -141,15 +141,16 @@ Sub CreateTasksByExcel(NumBIQ, StartDate, ExcelFileName)
     Next BiqTask
 
     Index = 1
+		' Если не нашли главную задачу 
     If BIQTaskId = 0 Then
-        'Если не нашли то создаем главную задачу по BIQ
-        Call AddNewTask(True, False, StartDate, NumBIQ, TaskType, BIQName, "", 0, False, "", "", "")
-        'Создаем подзадачу для системы
-        Call AddNewTask(False, True, StartDate, "", TaskType, BIQName, "", 0, False, ITService, "", "")
-    Else
-        'Создаем подзадачу для системы
-        Call AddNewTask(False, False, StartDate, "", TaskType, BIQName, "", BIQTaskId, False, ITService, "", "")
+        'Создаем главную задачу по BIQ
+				FirstTask = False
+        Call AddNewTask(True, FirstTask, StartDate, NumBIQ, TaskType, BIQName, "", 0, False, "", "", "", Index)
     End If
+		
+		'Создаем подзадачу для системы
+    FirstTask = True
+		Call AddNewTask(False, FirstTask, StartDate, "", TaskType, BIQName, "", BIQTaskId, False, ITService, "", "", Index)
     
     FirstTask = True
     For i = 8 To 26
@@ -163,17 +164,14 @@ Sub CreateTasksByExcel(NumBIQ, StartDate, ExcelFileName)
                 TaskName = Trim(Mid(TaskName, 1, Parenthesis - 1)) 'Название задачи
             End If
             TaskHours = ExcelSheet.Cells(i, 7) 'Время задачи
-            Call AddNewTask(False, FirstTask, StartDate, "", TaskType, TaskName, TaskHours, BIQTaskId, True, ITService, TypeWork, TaskActor)
-            ' Для первой задачи делаем отступ
-            If FirstTask Then
-                FirstTask = False
-            End If
+            Call AddNewTask(False, FirstTask, StartDate, "", TaskType, TaskName, TaskHours, BIQTaskId, True, ITService, TypeWork, TaskActor, Index)
         End If
     Next i
-                'функция заполнения предшественников
+    
+		'функция заполнения предшественников
     Call TaskPredInPut(ExcelSheet, StartDate)
     
-                'Заполняем исполнителей
+    'Заполняем исполнителей
     Call FillResourses(ExcelSheet, TaskGroupCK, FuncArea, TaskTeg, SystemCode)
     
     xlobject.Quit 'Закрытие Excel файла
@@ -342,7 +340,7 @@ Public Function DelPred(TaskPredecessors) As String
 End Function
 
 ' Создание задачи в MS Project
-Sub AddNewTask(MainTask, FirstTask, BiqStartDate, TaskJiraId, TaskType, TaskName, TaskHours, BIQTaskId, ToTaskDays, TaskTypeITService, TaskTypeWork, TaskActor)
+Sub AddNewTask(MainTask, ByRef FirstTask, BiqStartDate, TaskJiraId, TaskType, TaskName, TaskHours, BIQTaskId, ToTaskDays, TaskTypeITService, TaskTypeWork, TaskActor, ByRef Index)
     
     ' Создаем задачу
     If BIQTaskId = 0 Then
@@ -374,7 +372,13 @@ Sub AddNewTask(MainTask, FirstTask, BiqStartDate, TaskJiraId, TaskType, TaskName
             IndexTaskLast = NewTask.id 'Последний индекс
         End If
     End If
-                'Сохраняем поля описания задачи
+
+		' Только для первой задачи делаем отступ
+		If FirstTask Then
+				FirstTask = False
+		End If
+		
+    'Сохраняем поля описания задачи
     NewTask.SetField FieldID:=projectField_ITService, Value:=TaskTypeITService
     NewTask.SetField FieldID:=projectField_Cost, Value:=TaskHours
     NewTask.SetField FieldID:=projectField_JiraProjName, Value:=TaskType
