@@ -14,7 +14,6 @@ Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
 
-
 'Названия полей в MS Project
 Dim projectField_Name         As Long
 Dim projectField_JirID        As Long
@@ -176,11 +175,43 @@ Sub CreateTasksByExcel(NumBIQ, StartDate, ExcelFileName)
     
                 'Заполняем исполнителей
     Call FillResourses(TaskGroupCK, FuncArea, TaskTeg, SystemCode)
-    
+				
+				'Растягиваем даты задач
+    StretchTasks
+				
     xlobject.Quit 'Закрытие Excel файла
     
 End Sub
+'функция замена даты для растяжение задач с типом НН
+Sub StretchTasks()
 
+	Dim BiqTaskPred As Task
+	Dim BiqTaskDesc As Task
+				'Цикл поиска задачи с типом предшественников НН
+	For Each BiqTaskDesc In ActiveProject.Tasks
+		TaskDesc = BiqTaskDesc.GetField(FieldID:=projectField_Predecessors)
+		If (BiqTaskDesc.id >= IndexTaskFirst And BiqTaskDesc.id <= IndexTaskLast) _
+		And (InStr(TaskDesc, "НН") <> 0) Then
+				'Номер предшественника с НН
+			NumPred = Left(Mid(TaskDesc, InStr(TaskDesc, ";") + 1), InStr(Mid(TaskDesc, InStr(TaskDesc, ";")), "НН") - 2)
+			DateStartDesc = Mid(BiqTaskDesc.GetField(FieldID:=projectField_Start), 4)
+				'Цикл поиска предшественника по номеру
+			For Each BiqTaskPred In ActiveProject.Tasks
+				If (BiqTaskPred.id >= IndexTaskFirst And BiqTaskPred.id <= IndexTaskLast) _
+				And NumPred = BiqTaskPred.id Then
+				'Дата начала задачи предшественника
+					DateStartPred = Mid(BiqTaskPred.GetField(FieldID:=projectField_Start), 4)
+				End If
+			Next BiqTaskPred
+			DifferenceDateDay = DateDiff("d", DateStartPred, DateStartDesc)
+			Procent = WorksheetFunction.Round(DifferenceDateDay * 40 / 7, 2)
+			Procent = WorksheetFunction.Round(8 / Procent, 2) * 100
+				'Замена процента
+			BiqTaskDesc.SetField FieldID:=projectField_Actor, Value:=Left(BiqTaskDesc.GetField(FieldID:=projectField_Actor), InStr(BiqTaskDesc.GetField(FieldID:=projectField_Actor), "[") - 1) & "[" & Procent & "%]"
+		End If
+	Next BiqTaskDesc
+
+End Sub
 'функция назначения исполнителей
 Sub FillResourses(TaskGroupCK, FuncArea, TaskTeg, SystemCode)
    
@@ -195,7 +226,7 @@ Sub FillResourses(TaskGroupCK, FuncArea, TaskTeg, SystemCode)
                 If (Res.GetField(FieldID:=projectField_ResGroupCk) = TaskGroupCK) And (TaskTeg = "" Or Res.GetField(FieldID:=projectField_Teg) = TaskTeg) _
                 And ((Res.GetField(FieldID:=projectField_FuncArea1) = FuncArea) Or (Res.GetField(FieldID:=projectField_FuncArea2) = FuncArea) Or (Res.GetField(FieldID:=projectField_FuncArea3) = FuncArea)) _
                 And ((Res.GetField(FieldID:=projectField_System1) = SystemCode) Or (Res.GetField(FieldID:=projectField_System2) = SystemCode)) _
-                And ((Res.GetField(FieldID:=projectField_ResGroup) = Mid(TaskActor, 1, InStr(TaskActor, "[") - 1))) Then
+                And ((Res.GetField(FieldID:=projectField_ResGroup) = Mid(TaskActor, 1, InStr(TaskActor, "[") - 2))) Then
                     TaskActor = Res.name + Mid(TaskActor, InStr(TaskActor, "["))
                 End If
             Next Res
