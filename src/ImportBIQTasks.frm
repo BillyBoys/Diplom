@@ -24,6 +24,7 @@ Dim projectField_Restrict     As Long
 Dim projectField_JiraProjName As Long
 Dim projectField_Predecessors As Long
 Dim projectField_Start        As Long
+Dim projectField_End          As Long
 Dim projectField_ITService    As Long
 Dim projectField_TypeWork     As Long
 Dim projectField_Teg          As Long
@@ -48,8 +49,8 @@ Dim AllRes            As Resources
 Dim taskTime          As Variant
 Dim arrTime           As Variant
 
-Dim IndexTaskFirst    As Long
-Dim IndexTaskLast     As Long
+'Dim IndexTaskFirst    As Long
+'Dim IndexTaskLast     As Long
 'Dim Index             As Long
 'Dim StartDate         As Date
 
@@ -141,16 +142,16 @@ Sub CreateTasksByExcel(NumBIQ, StartDate, ExcelFileName)
     Next BiqTask
 
     Index = 1
-		' Если не нашли главную задачу 
+    ' Если не нашли главную задачу 
     If BIQTaskId = 0 Then
         'Создаем главную задачу по BIQ
-				FirstTask = False
-        Call AddNewTask(True, FirstTask, StartDate, NumBIQ, TaskType, BIQName, "", 0, False, "", "", "", Index)
+        FirstTask = False
+        Call AddNewTask(True, FirstTask, StartDate, NumBIQ, TaskType, BIQName, "", 0, False, "", "", "", Index, IndexTaskFirst, IndexTaskLast)
     End If
-		
-		'Создаем подзадачу для системы
+    
+    'Создаем подзадачу для системы
     FirstTask = True
-		Call AddNewTask(False, FirstTask, StartDate, "", TaskType, BIQName, "", BIQTaskId, False, ITService, "", "", Index)
+    Call AddNewTask(False, FirstTask, StartDate, "", TaskType, BIQName, "", BIQTaskId, False, ITService, "", "", Index, IndexTaskFirst, IndexTaskLast)
     
     FirstTask = True
     For i = 8 To 26
@@ -164,54 +165,71 @@ Sub CreateTasksByExcel(NumBIQ, StartDate, ExcelFileName)
                 TaskName = Trim(Mid(TaskName, 1, Parenthesis - 1)) 'Название задачи
             End If
             TaskHours = ExcelSheet.Cells(i, 7) 'Время задачи
-            Call AddNewTask(False, FirstTask, StartDate, "", TaskType, TaskName, TaskHours, BIQTaskId, True, ITService, TypeWork, TaskActor, Index)
+            Call AddNewTask(False, FirstTask, StartDate, "", TaskType, TaskName, TaskHours, BIQTaskId, True, ITService, TypeWork, TaskActor, Index, IndexTaskFirst, IndexTaskLast)
         End If
     Next i
     
-		'функция заполнения предшественников
-    Call TaskPredInPut(ExcelSheet, StartDate)
+    'функция заполнения предшественников
+    Call TaskPredInPut(ExcelSheet, StartDate, IndexTaskFirst, IndexTaskLast)
     
     'Заполняем исполнителей
-    Call FillResourses(TaskGroupCK, FuncArea, TaskTeg, SystemCode)
-				
-				'Растягиваем даты задач
-    StretchTasks
-				
+    Call FillResourses(TaskGroupCK, FuncArea, TaskTeg, SystemCode, IndexTaskFirst, IndexTaskLast)
+        
+    'Растягиваем даты задач
+    Call StretchTasks(IndexTaskFirst, IndexTaskLast)
+        
     xlobject.Quit 'Закрытие Excel файла
     
 End Sub
-'функция замена даты для растяжение задач с типом НН
-Sub StretchTasks()
 
-	Dim BiqTaskPred As Task
-	Dim BiqTaskDesc As Task
-				'Цикл поиска задачи с типом предшественников НН
-	For Each BiqTaskDesc In ActiveProject.Tasks
-		TaskDesc = BiqTaskDesc.GetField(FieldID:=projectField_Predecessors)
-		If (BiqTaskDesc.id >= IndexTaskFirst And BiqTaskDesc.id <= IndexTaskLast) _
-		And (InStr(TaskDesc, "НН") <> 0) Then
-				'Номер предшественника с НН
-			NumPred = Left(Mid(TaskDesc, InStr(TaskDesc, ";") + 1), InStr(Mid(TaskDesc, InStr(TaskDesc, ";")), "НН") - 2)
-			DateStartDesc = Mid(BiqTaskDesc.GetField(FieldID:=projectField_Start), 4)
-				'Цикл поиска предшественника по номеру
-			For Each BiqTaskPred In ActiveProject.Tasks
-				If (BiqTaskPred.id >= IndexTaskFirst And BiqTaskPred.id <= IndexTaskLast) _
-				And NumPred = BiqTaskPred.id Then
-				'Дата начала задачи предшественника
-					DateStartPred = Mid(BiqTaskPred.GetField(FieldID:=projectField_Start), 4)
-				End If
-			Next BiqTaskPred
-			DifferenceDateDay = DateDiff("d", DateStartPred, DateStartDesc)
-			Procent = WorksheetFunction.Round(DifferenceDateDay * 40 / 7, 2)
-			Procent = WorksheetFunction.Round(8 / Procent, 2) * 100
-				'Замена процента
-			BiqTaskDesc.SetField FieldID:=projectField_Actor, Value:=Left(BiqTaskDesc.GetField(FieldID:=projectField_Actor), InStr(BiqTaskDesc.GetField(FieldID:=projectField_Actor), "[") - 1) & "[" & Procent & "%]"
-		End If
-	Next BiqTaskDesc
+'функция замена даты для растяжение задач с типом НН
+Sub StretchTasks(IndexTaskFirst, IndexTaskLast)
+
+  Dim BiqTaskPred As Task
+  Dim BiqTaskDesc As Task
+  'Цикл поиска задачи с типом предшественников НН
+  For Each BiqTaskDesc In ActiveProject.Tasks
+    If (BiqTaskDesc.id >= IndexTaskFirst And BiqTaskDesc.id <= IndexTaskLast) Then
+      TaskDesc = BiqTaskDesc.GetField(FieldID:=projectField_Predecessors)
+      If (InStr(TaskDesc, "НН") <> 0) Then
+        'Текущие дата конца задачи
+        DateEndDesc = Mid(BiqTaskDesc.GetField(FieldID:=projectField_End), 4)
+        'Поиск требуемого дата начала
+        'Номер предшественника с НН
+        NumPred = Left(Mid(TaskDesc, InStr(TaskDesc, ";") + 1), InStr(Mid(TaskDesc, InStr(TaskDesc, ";")), "НН") - 2)
+        'Цикл поиска предшественника по номеру
+        For Each BiqTaskPred In ActiveProject.Tasks
+          If NumPred = BiqTaskPred.id Then
+            'Дата начала задачи предшественника - требуемое дата начала
+            DateStartPred = Mid(BiqTaskPred.GetField(FieldID:=projectField_Start), 4)
+          End If
+        Next BiqTaskPred
+        DiffDateDayNeed = DateDiff("d", DateStartPred, DateEndDesc) 'нужно дней
+        HoursToWork = BiqTaskDesc.GetField(FieldID:=projectField_Cost)
+        HoursToWork = Left(HoursToWork, InStr(HoursToWork, " ")) 'трудозатраты
+        
+        AllHoursInDiff = DiffDateDayNeed / 7 * 40
+        Procent = HoursToWork / AllHoursInDiff * 100
+        RoundProcent = WorksheetFunction.Round(Procent + 0.5, 0)
+        'Замена процента
+        BiqTaskDesc.SetField FieldID:=projectField_Actor, Value:=Left(BiqTaskDesc.GetField(FieldID:=projectField_Actor), InStr(BiqTaskDesc.GetField(FieldID:=projectField_Actor), "[") - 1) & "[" & RoundProcent & "%]"
+
+        'Текущие дата начала
+        DateStartDesc = Mid(BiqTaskDesc.GetField(FieldID:=projectField_Start), 4)
+        DiffDateDayNow = DateDiff("d", DateStartPred, DateStartDesc) 'сейчас столько дней'
+        if DiffDateDayNow > 0 Then
+          HoursToWorkNew = HoursToWork + RoundProcent / 100 * (DiffDateDayNow * 8)
+          'Замена трудоемкости
+          BiqTaskDesc.SetField FieldID:=projectField_Cost, Value:= HoursToWorkNew
+        End If
+      End If
+    End If
+  Next BiqTaskDesc
 
 End Sub
+
 'функция назначения исполнителей
-Sub FillResourses(TaskGroupCK, FuncArea, TaskTeg, SystemCode)
+Sub FillResourses(TaskGroupCK, FuncArea, TaskTeg, SystemCode, IndexTaskFirst, IndexTaskLast)
    
     Dim BiqTask As Task
     Set AllRes = ActiveProject.Resources
@@ -234,7 +252,7 @@ Sub FillResourses(TaskGroupCK, FuncArea, TaskTeg, SystemCode)
 End Sub
 
 'функция заполнения предшественников
-Sub TaskPredInPut(ExcelSheet, BiqStartDate)
+Sub TaskPredInPut(ExcelSheet, BiqStartDate, IndexTaskFirst, IndexTaskLast)
 
     i = 8
     Dim BiqTask As Task
@@ -245,7 +263,7 @@ Sub TaskPredInPut(ExcelSheet, BiqStartDate)
             Loop
             TaskPredecessors = ExcelSheet.Cells(i, 4) 'Предешественник
             If TaskPredecessors <> "" Then
-                TaskPredecessors = DelPred(TaskPredecessors)
+                TaskPredecessors = DelPred(TaskPredecessors, IndexTaskFirst, IndexTaskLast)
             Else
                 BiqTask.SetField FieldID:=projectField_Start, Value:=BiqStartDate
             End If
@@ -254,12 +272,12 @@ Sub TaskPredInPut(ExcelSheet, BiqStartDate)
         End If
     Next BiqTask
                 'Функция замены предшественников
-    Zerotasksdel
+    Call Zerotasksdel(IndexTaskFirst, IndexTaskLast)
     
 End Sub
 
 'Функция замены у потомков
-Sub Zerotasksdel()
+Sub Zerotasksdel(IndexTaskFirst, IndexTaskLast)
             
     Dim BiqTask As Task
     Dim BiqTaskSecond As Task
@@ -275,8 +293,8 @@ Sub Zerotasksdel()
             End If
         End If
     Next BiqTask
-                'Удаление всех задач с нулем часов
-    DeleteAllZeroTasks
+    'Удаление всех задач с нулем часов
+    Call DeleteAllZeroTasks(IndexTaskFirst, IndexTaskLast)
     
 End Sub
 
@@ -316,7 +334,7 @@ Sub RepCycPred(TempZeroTaskID, TempPredec)
 End Sub
 
 'функция изменения сложных предшественников
-Public Function DelPred(TaskPredecessors) As String
+Public Function DelPred(TaskPredecessors, IndexTaskFirst, IndexTaskLast) As String
 
     Delim = InStr(1, TaskPredecessors, ";")
     NewPredecessors = ""
@@ -358,7 +376,7 @@ Public Function DelPred(TaskPredecessors) As String
 End Function
 
 ' Создание задачи в MS Project
-Sub AddNewTask(MainTask, ByRef FirstTask, BiqStartDate, TaskJiraId, TaskType, TaskName, TaskHours, BIQTaskId, ToTaskDays, TaskTypeITService, TaskTypeWork, TaskActor, ByRef Index)
+Sub AddNewTask(MainTask, ByRef FirstTask, BiqStartDate, TaskJiraId, TaskType, TaskName, TaskHours, BIQTaskId, ToTaskDays, TaskTypeITService, TaskTypeWork, TaskActor, ByRef Index, ByRef IndexTaskFirst, ByRef IndexTaskLast)
     
     ' Создаем задачу
     If BIQTaskId = 0 Then
@@ -391,11 +409,11 @@ Sub AddNewTask(MainTask, ByRef FirstTask, BiqStartDate, TaskJiraId, TaskType, Ta
         End If
     End If
 
-		' Только для первой задачи делаем отступ
-		If FirstTask Then
-				FirstTask = False
-		End If
-		
+    ' Только для первой задачи делаем отступ
+    If FirstTask Then
+        FirstTask = False
+    End If
+    
     'Сохраняем поля описания задачи
     NewTask.SetField FieldID:=projectField_ITService, Value:=TaskTypeITService
     NewTask.SetField FieldID:=projectField_Cost, Value:=TaskHours
@@ -417,6 +435,7 @@ Sub InitFieldConst()
     projectField_JiraProjName = FieldNameToFieldConstant("Имя проекта", pjProject)
     projectField_Predecessors = FieldNameToFieldConstant("Предшественники", pjProject)
     projectField_Start = FieldNameToFieldConstant("Начало", pjProject)
+    projectField_End = FieldNameToFieldConstant("Окончание", pjProject)
     projectField_ITService = FieldNameToFieldConstant("ИТ-Сервис", pjProject)
     projectField_TypeWork = FieldNameToFieldConstant("Тип работ", pjProject)
     projectField_Teg = FieldNameToFieldConstant("Тэг", pjResource)
@@ -462,32 +481,8 @@ Public Function ShowGetOpenDialog() As String
     
 End Function
 
-'Удаление последней задачи с нулем часов
-Sub DeleteLastZeroHours()
-    
-    Dim BiqTask As Task
-    For Each BiqTask In ActiveProject.Tasks
-        If BiqTask.GetField(FieldID:=projectField_Cost) = "0 ч" Then
-            If (BiqTask.id >= IndexTaskFirst And BiqTask.id <= IndexTaskLast) Then
-                BIQTaskId = BiqTask.id
-            End If
-        End If
-    Next BiqTask
-    IndexBIQ = 0
-    For Each BiqTask In ActiveProject.Tasks
-        IndexBIQ = IndexBIQ + 1
-        If IndexBIQ = BIQTaskId Then
-            If (BiqTask.id >= IndexTaskFirst And BiqTask.id <= IndexTaskLast) Then
-                BiqTask.Delete 'Удаление BIQ-задачи
-                IndexTaskLast = IndexTaskLast - 1
-            End If
-        End If
-    Next BiqTask
-
-End Sub
-
 'Удаление всех задач с нулем часов
-Sub DeleteAllZeroTasks()
+Sub DeleteAllZeroTasks(IndexTaskFirst, IndexTaskLast)
 
     Dim BiqTask As Task
     For Each BiqTask In ActiveProject.Tasks
