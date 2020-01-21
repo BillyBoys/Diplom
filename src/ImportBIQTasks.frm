@@ -13,7 +13,6 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
-
 'Названия полей в MS Project
 Dim projectField_Name         As Long
 Dim projectField_JirID        As Long
@@ -100,8 +99,8 @@ End Sub
 Private Sub UserForm_Initialize()
     tbStartDate = Format(Date, "dd/mm/yyyy")
     TBNumBIQ = "BIQ-5257"
-    'FileNameCFTTextBox = "C:\Users\Эрнест\Documents\GitHub\Diplom\test\Расшифровка ЭО BIQ5257.xlsx"
-    FileNameCFTTextBox = "d:\info\Эрнест\Diplom\test\Расшифровка ЭО BIQ5257.xlsx"
+    FileNameCFTTextBox = "C:\Users\Эрнест\Documents\GitHub\Diplom\test\Расшифровка ЭО BIQ5257.xlsx"
+    'FileNameCFTTextBox = "d:\info\Эрнест\Diplom\test\Расшифровка ЭО BIQ5257.xlsx"
     TBNumBIQFDelete = 5257
 End Sub
 
@@ -142,16 +141,19 @@ Sub CreateTasksByExcel(NumBIQ, StartDate, ExcelFileName)
     Next BiqTask
 
     Index = 1
-    ' Если не нашли главную задачу 
+    ' Если не нашли главную задачу
     If BIQTaskId = 0 Then
         'Создаем главную задачу по BIQ
         FirstTask = False
         Call AddNewTask(True, FirstTask, StartDate, NumBIQ, TaskType, BIQName, "", 0, False, "", "", "", Index, IndexTaskFirst, IndexTaskLast)
+        'Создаем подзадачу для системы
+        FirstTask = True
+        Call AddNewTask(False, FirstTask, StartDate, "", TaskType, BIQName, "", BIQTaskId, False, ITService, "", "", Index, IndexTaskFirst, IndexTaskLast)
+    Else
+        'Создаем подзадачу для системы
+        FirstTask = False
+        Call AddNewTask(False, FirstTask, StartDate, "", TaskType, BIQName, "", BIQTaskId, False, ITService, "", "", Index, IndexTaskFirst, IndexTaskLast)
     End If
-    
-    'Создаем подзадачу для системы
-    FirstTask = True
-    Call AddNewTask(False, FirstTask, StartDate, "", TaskType, BIQName, "", BIQTaskId, False, ITService, "", "", Index, IndexTaskFirst, IndexTaskLast)
     
     FirstTask = True
     For i = 8 To 26
@@ -174,11 +176,43 @@ Sub CreateTasksByExcel(NumBIQ, StartDate, ExcelFileName)
     
     'Заполняем исполнителей
     Call FillResourses(TaskGroupCK, FuncArea, TaskTeg, SystemCode, IndexTaskFirst, IndexTaskLast)
+    
+    'Растягивание задач для устранения перегруза
+    Call ExtendTasks(IndexTaskFirst, IndexTaskLast)
         
     'Растягиваем даты задач
     Call StretchTasks(IndexTaskFirst, IndexTaskLast)
         
     xlobject.Quit 'Закрытие Excel файла
+    
+End Sub
+
+'функция растягивания задач для устранения перегруза
+Sub ExtendTasks(IndexTaskFirst, IndexTaskLast)
+
+    Dim BiqTask As Task
+    Set AllRes = ActiveProject.Resources
+	'Цикл по всем задачам
+    For Each BiqTask In ActiveProject.Tasks
+        If (BiqTask.id >= IndexTaskFirst And BiqTask.id <= IndexTaskLast) Then
+            Resource = BiqTask.GetField(FieldID:=projectField_Actor)
+			'цикл по всем ресурсам
+            For Each Res In AllRes
+                Set resAssArr = Res.Assignments
+                For Each resAss In resAssArr
+                    Set assTask = resAss.Task
+                    If Resource = assTask.ResourceNames Then
+                        DurationWorkDaysPerest = assTask.DurationText 'Длительность в рабочих днях
+                        StartDatePerest = Mid(Mid(assTask.StartText, 4), 1, 6) & "20" & Mid(assTask.StartText, 10) 'Дата начала задачи
+                        FinishDatePerest = Mid(Mid(assTask.FinishText, 4), 1, 6) & "20" & Mid(assTask.FinishText, 10) 'Дата конца задачи
+                        TimePerest = assTask.TimeScaleData(assTask.Start, assTask.Finish, TimescaleUnit:=4)(1).Value / (60) 'Нагрузку часов в день
+                        CurrenRes = -1
+                        CurrentStartDate = "31.12.2040"
+                    End If
+                Next resAss
+            Next Res
+        End If
+    Next BiqTask
     
 End Sub
 
@@ -217,10 +251,10 @@ Sub StretchTasks(IndexTaskFirst, IndexTaskLast)
         'Текущие дата начала
         DateStartDesc = Mid(BiqTaskDesc.GetField(FieldID:=projectField_Start), 4)
         DiffDateDayNow = DateDiff("d", DateStartPred, DateStartDesc) 'сейчас столько дней'
-        if DiffDateDayNow > 0 Then
+        If DiffDateDayNow > 0 Then
           HoursToWorkNew = HoursToWork + RoundProcent / 100 * (DiffDateDayNow * 8)
           'Замена трудоемкости
-          BiqTaskDesc.SetField FieldID:=projectField_Cost, Value:= HoursToWorkNew
+          BiqTaskDesc.SetField FieldID:=projectField_Cost, Value:=HoursToWorkNew
         End If
       End If
     End If
@@ -302,7 +336,6 @@ End Sub
 Sub RepCycPred(TempZeroTaskID, TempPredec)
 
     Dim BiqTask As Task
-
     For Each BiqTask In ActiveProject.Tasks 'Цикл замены у потомков
         TempDesc = BiqTask.GetField(FieldID:=projectField_Predecessors)
         If InStr(1, TempDesc, ";") = 0 Then
