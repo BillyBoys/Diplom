@@ -13,6 +13,7 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
+
 'Названия полей в MS Project
 Dim projectField_Name         As Long
 Dim projectField_JirID        As Long
@@ -93,8 +94,8 @@ End Sub
 Private Sub UserForm_Initialize()
   tbStartDate = Format(Date, "dd/mm/yyyy")
   TBNumBIQ = "BIQ-5257"
-  'FileNameCFTTextBox = "C:\Users\Эрнест\Documents\GitHub\Diplom\test\Расшифровка ЭО BIQ5257.xlsx"
-  FileNameCFTTextBox = "d:\info\Эрнест\Diplom\test\Расшифровка ЭО BIQ5257.xlsx"
+  FileNameCFTTextBox = "C:\Users\Эрнест\Documents\GitHub\Diplom\test\Расшифровка ЭО BIQ5257.xlsx"
+  'FileNameCFTTextBox = "d:\info\Эрнест\Diplom\test\Расшифровка ЭО BIQ5257.xlsx"
   TBNumBIQFDelete = 5257
 End Sub
 
@@ -185,39 +186,40 @@ End Sub
 Sub ExtendTasks(IndexTaskFirst, IndexTaskLast)
 
   Dim BiqTask As Task
-  Dim TaskRes As Resource
   'Цикл по всем задачам
   For Each BiqTask In ActiveProject.Tasks
     If (BiqTask.id >= IndexTaskFirst And BiqTask.id <= IndexTaskLast) Then
       'Бежим по всем датам задачи
       For CheckDate = BiqTask.Start To BiqTask.Finish
-        ' Цикл по всем ресурсам задачи
-        For Each TaskRes In BiqTask.Resources
-          TimePerest = 0
-          ' Цикл по всем задачам ресурса на обрабатываемый день
-          For Each ResAss In TaskRes.Assignments
-            Set AssTask = ResAss.Task
-            If (AssTask.Start <= CheckDate And  AssTask.Finish >= CheckDate) Then
-              Set TaskTSD = AssTask.TimeScaleData(CheckDate, CheckDate, TimescaleUnit:=4)
-              For i = 1 To TaskTSD.Count
-                If Not TaskTSD(i).Value = "" Then
-                  TimePerest = TimePerest +  TaskTSD(i).Value / (60) 'Нагрузку часов в день
-                End If
-              Next i
-            End If
-          Next ResAss
-          
-          ' корректируем процент загруженности
-          If TimePerest > 8 Then
-            ' TaskRes.Assignments
-            'msgbox TimePerest & " " & CheckDate & " " & TaskRes.Name
-          End If
-        Next TaskRes
+        TimeHoursOneDay = GetResLoad(CheckDate, BiqTask)
       Next CheckDate
     End If
   Next BiqTask
-    
+
 End Sub
+
+Public Function GetResLoad(CheckDate, BiqTask) As Single
+
+Dim TaskRes As Resource
+
+  For Each TaskRes In BiqTask.Resources
+    TimePerest = 0
+		' Цикл по всем задачам ресурса на обрабатываемый день
+    For Each resAss In TaskRes.Assignments
+      Set assTask = resAss.Task
+      If (assTask.Start <= CheckDate And assTask.Finish >= CheckDate) Then
+        Set TaskTSD = assTask.TimeScaleData(CheckDate, CheckDate, TimescaleUnit:=4)
+        For i = 1 To TaskTSD.Count
+          If Not TaskTSD(i).Value = "" Then
+            TimePerest = TimePerest + TaskTSD(i).Value / (60)  'Нагрузку часов в день
+          End If
+        Next i
+      End If
+    Next resAss
+  Next TaskRes
+  GetResLoad = TimePerest
+
+End Function
 
 'функция замена даты для растяжение задач с типом НН
 Sub StretchTasks(IndexTaskFirst, IndexTaskLast)
@@ -367,6 +369,7 @@ Sub RepCycPred(TempZeroTaskID, TempPredec)
       End If
     End If
   Next BiqTask
+  
 End Sub
 
 'функция изменения сложных предшественников
