@@ -15,6 +15,7 @@ Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
 
 
+
 'Названия полей в MS Project
 Dim projectField_Name         As Long
 Dim projectField_JirID        As Long
@@ -95,8 +96,8 @@ End Sub
 Private Sub UserForm_Initialize()
   tbStartDate = Format(Date, "dd/mm/yyyy")
   TBNumBIQ = "BIQ-5257"
-  FileNameCFTTextBox = "C:\Users\Эрнест\Documents\GitHub\Diplom\test\Расшифровка ЭО BIQ5257.xlsx"
-  'FileNameCFTTextBox = "d:\info\Эрнест\Diplom\test\Расшифровка ЭО BIQ5257.xlsx"
+  'FileNameCFTTextBox = "C:\Users\Эрнест\Documents\GitHub\Diplom\test\Расшифровка ЭО BIQ5257.xlsx"
+  FileNameCFTTextBox = "d:\info\Эрнест\Diplom\test\Расшифровка ЭО BIQ5257.xlsx"
   TBNumBIQFDelete = 5257
 End Sub
 
@@ -129,26 +130,26 @@ Sub CreateTasksByExcel(NumBIQ, StartDate, ExcelFileName)
   TaskTeg = ExcelSheet.Cells(3, 2)    'Тэг
 
   'Пытаемся найти главную задачу по BIQ
-  BIQTaskId = 0
+  BiqTaskID = 0
   For Each BiqTask In ActiveProject.Tasks
     If BiqTask.GetField(FieldID:=projectField_JirID) = NumBIQ Then
-      BIQTaskId = BiqTask.id
+      BiqTaskID = BiqTask.id
     End If
   Next BiqTask
 
   Index = 1
   ' Если не нашли главную задачу
-  If BIQTaskId = 0 Then
+  If BiqTaskID = 0 Then
     'Создаем главную задачу по BIQ
     FirstTask = False
     Call AddNewTask(True, FirstTask, StartDate, NumBIQ, TaskType, BIQName, "", 0, False, "", "", "", Index, IndexTaskFirst, IndexTaskLast)
     'Создаем подзадачу для системы
     FirstTask = True
-    Call AddNewTask(False, FirstTask, StartDate, "", TaskType, BIQName, "", BIQTaskId, False, ITService, "", "", Index, IndexTaskFirst, IndexTaskLast)
+    Call AddNewTask(False, FirstTask, StartDate, "", TaskType, BIQName, "", BiqTaskID, False, ITService, "", "", Index, IndexTaskFirst, IndexTaskLast)
   Else
     'Создаем подзадачу для системы
     FirstTask = False
-    Call AddNewTask(False, FirstTask, StartDate, "", TaskType, BIQName, "", BIQTaskId, False, ITService, "", "", Index, IndexTaskFirst, IndexTaskLast)
+    Call AddNewTask(False, FirstTask, StartDate, "", TaskType, BIQName, "", BiqTaskID, False, ITService, "", "", Index, IndexTaskFirst, IndexTaskLast)
   End If
   
   FirstTask = True
@@ -163,13 +164,15 @@ Sub CreateTasksByExcel(NumBIQ, StartDate, ExcelFileName)
         TaskName = Trim(Mid(TaskName, 1, Parenthesis - 1)) 'Название задачи
       End If
       TaskHours = ExcelSheet.Cells(i, 7) 'Время задачи
-      Call AddNewTask(False, FirstTask, StartDate, "", TaskType, TaskName, TaskHours, BIQTaskId, True, ITService, TypeWork, TaskActor, Index, IndexTaskFirst, IndexTaskLast)
+      Call AddNewTask(False, FirstTask, StartDate, "", TaskType, TaskName, TaskHours, BiqTaskID, True, ITService, TypeWork, TaskActor, Index, IndexTaskFirst, IndexTaskLast)
     End If
   Next i
   
   'функция заполнения предшественников
   Call TaskPredInPut(ExcelSheet, StartDate, IndexTaskFirst, IndexTaskLast)
+  
   xlobject.Quit 'Закрытие Excel файла
+  
   'Заполняем исполнителей
   Call FillResourses(TaskGroupCK, FuncArea, TaskTeg, SystemCode, IndexTaskFirst, IndexTaskLast)
   
@@ -204,7 +207,7 @@ Public Function GetResLoad(CheckDate, BiqTask) As Single
   Dim TaskRes As Resource
   For Each TaskRes In BiqTask.Resources
     TimePerest = 0
-		' Цикл по всем задачам ресурса на обрабатываемый день
+                ' Цикл по всем задачам ресурса на обрабатываемый день
     For Each resAss In TaskRes.Assignments
       Set assTask = resAss.Task
       If (assTask.Start <= CheckDate And assTask.Finish >= CheckDate) Then
@@ -259,8 +262,8 @@ Sub StretchTasks(IndexTaskFirst, IndexTaskLast)
         HoursToWork = Left(HoursToWork, InStr(HoursToWork, " ")) 'трудозатраты
         
         AllHoursInDiff = DiffDateDayNeed / 7 * 40
-        Procent = HoursToWork / AllHoursInDiff * 100
-        RoundProcent = WorksheetFunction.Round(Procent + 0.5, 0)
+        procent = HoursToWork / AllHoursInDiff * 100
+        RoundProcent = WorksheetFunction.Round(procent + 0.5, 0)
         'Замена процента
         BiqTaskDesc.SetField FieldID:=projectField_Actor, Value:=Left(BiqTaskDesc.GetField(FieldID:=projectField_Actor), InStr(BiqTaskDesc.GetField(FieldID:=projectField_Actor), "[") - 1) & "[" & RoundProcent & "%]"
 
@@ -292,12 +295,23 @@ Sub FillResourses(TaskGroupCK, FuncArea, TaskTeg, SystemCode, IndexTaskFirst, In
         And ((Res.GetField(FieldID:=projectField_FuncArea1) = FuncArea) Or (Res.GetField(FieldID:=projectField_FuncArea2) = FuncArea) Or (Res.GetField(FieldID:=projectField_FuncArea3) = FuncArea)) _
         And ((Res.GetField(FieldID:=projectField_System1) = SystemCode) Or (Res.GetField(FieldID:=projectField_System2) = SystemCode)) _
         And ((Res.GetField(FieldID:=projectField_ResGroup) = Mid(TaskActor, 1, InStr(TaskActor, "[") - 2))) Then
-          TaskActor = Res.name + Mid(TaskActor, InStr(TaskActor, "["))
+          'TaskActor = Res.name + Mid(TaskActor, InStr(TaskActor, "["))
+          Percent = BiqTask.Assignments(1).Units
+          TaskActorId = Res.id
         End If
       Next Res
-      BiqTask.SetField FieldID:=projectField_Actor, Value:=TaskActor
+      Call SetTaskResProcent(BiqTask, TaskActorId, Percent)
+      'BiqTask.SetField FieldID:=projectField_Actor, Value:=TaskActor
     End If
   Next BiqTask
+    
+End Sub
+
+'Назначение ресурса на задачу
+Sub SetTaskResProcent(BiqTask, TaskActorId, Percent)
+    
+    BiqTask.Assignments(1).Delete'удаление первой задачи так как могут повторятся
+    BiqTask.Assignments.Add BiqTask.id, TaskActorId, Percent
     
 End Sub
 
@@ -426,13 +440,13 @@ Public Function DelPred(TaskPredecessors, IndexTaskFirst, IndexTaskLast) As Stri
 End Function
 
 ' Создание задачи в MS Project
-Sub AddNewTask(MainTask, ByRef FirstTask, BiqStartDate, TaskJiraId, TaskType, TaskName, TaskHours, BIQTaskId, ToTaskDays, TaskTypeITService, TaskTypeWork, TaskActor, ByRef Index, ByRef IndexTaskFirst, ByRef IndexTaskLast)
+Sub AddNewTask(MainTask, ByRef FirstTask, BiqStartDate, TaskJiraId, TaskType, TaskName, TaskHours, BiqTaskID, ToTaskDays, TaskTypeITService, TaskTypeWork, TaskActor, ByRef Index, ByRef IndexTaskFirst, ByRef IndexTaskLast)
   
   ' Создаем задачу
-  If BIQTaskId = 0 Then
+  If BiqTaskID = 0 Then
     Set NewTask = ActiveProject.Tasks.Add(TaskName)
   Else
-    Set NewTask = ActiveProject.Tasks.Add(TaskName, BIQTaskId + Index)
+    Set NewTask = ActiveProject.Tasks.Add(TaskName, BiqTaskID + Index)
   End If
   Index = Index + 1
   ' Для главной задачи возвращаем отступ к единице
@@ -552,14 +566,14 @@ Private Sub DeleteButton_Click()
   Dim BiqTask As Task ' Для поиска задачи по BIQ
   InitFieldConst
   BIQNum = "BIQ-" + TBNumBIQFDelete 'Номер BIQ-задачи
-  BIQTaskId = 0
+  BiqTaskID = 0
   For Each BiqTask In ActiveProject.Tasks
     If BiqTask.GetField(FieldID:=projectField_JirID) = BIQNum Then
-      BIQTaskId = BiqTask.id
+      BiqTaskID = BiqTask.id
       BiqTask.Delete 'Удаление BIQ-задачи
     End If
   Next BiqTask
-  If BIQTaskId = 0 Then
+  If BiqTaskID = 0 Then
     MsgBox ("Такой BIQ-задачи нет")
   End If
   
