@@ -14,7 +14,9 @@ Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
 
-
+'==========================================================================='
+'Скрипт импорта задач из оценки'
+'==========================================================================='
 
 'Названия полей в MS Project
 Dim projectField_Name         As Long
@@ -38,21 +40,13 @@ Dim projectField_FuncArea3    As Long
 Dim projectField_System1      As Long
 Dim projectField_System2      As Long
 
-Dim TSV               As TimeScaleValues
-Dim pTSV              As TimeScaleValues
-Dim resAssArr         As Assignments
-Dim resFilteredTask() As Task
-Dim assTaskLoop       As Task
-Dim resAss            As Assignment
-Dim assTask           As Task
-Dim Res               As Resource
-Dim SecRes            As Resource
-Dim AllRes            As Resources
-Dim taskTime          As Variant
-Dim arrTime           As Variant
 
 Private Sub HoursRes_Click()
 
+' Dim taskTime          As Variant
+' Dim arrTime           As Variant
+' Dim TSV               As TimeScaleValues
+' Dim resAssArr         As Assignments
 ' Определение доступности ресурса
 '    Set rs = ActiveProject.Resources
 '    arrTime = 0
@@ -174,7 +168,7 @@ Sub CreateTasksByExcel(NumBIQ, StartDate, ExcelFileName)
   xlobject.Quit 'Закрытие Excel файла
   
   'Заполняем исполнителей
-  Call FillResourses(TaskGroupCK, FuncArea, TaskTeg, SystemCode, IndexTaskFirst, IndexTaskLast)
+  Call FillResources(TaskGroupCK, FuncArea, TaskTeg, SystemCode, IndexTaskFirst, IndexTaskLast)
   
   'Растягивание задач для устранения перегруза
   Call ExtendTasks(IndexTaskFirst, IndexTaskLast)
@@ -188,52 +182,87 @@ End Sub
 Sub ExtendTasks(IndexTaskFirst, IndexTaskLast)
 
   Dim BiqTask As Task
+  Dim TaskRes As Resource
+  Dim resAss  As Assignment
   'Цикл по всем задачам
   For Each BiqTask In ActiveProject.Tasks
     If (BiqTask.id >= IndexTaskFirst And BiqTask.id <= IndexTaskLast) Then
-      'Бежим по всем датам задачи
-      For CheckDate = BiqTask.Start To BiqTask.Finish
-        TimeHoursOneDay = GetResLoad(CheckDate, BiqTask)
-        PercentOneDay = GetResAvailability(BiqTask)
-      Next CheckDate
+      For Each resAss In BiqTask.Assignments
+        'Бежим по всем датам задачи
+        For CheckDate = BiqTask.Start To BiqTask.Finish
+          HoursDayLoad = GetResLoad(CheckDate, resAss.Resource)
+          HoursDayLoadBiq = GetResLoadTask(CheckDate, BiqTask, resAss.ResourceID)
+          HoursDayHas = GetResAvailability(CheckDate, resAss.Resource) * 8
+          ' Если в день больше чем возможно
+          If HoursDayHas < HoursDayLoad Then
+            'Если перегруз можно снять текущей задачей
+            If HoursDayLoad - HoursDayHas < HoursDayLoadBiq Then
+              Percent = (HoursDayHas - (HoursDayLoad - HoursDayLoadBiq)) / HoursDayHas * 100
+              Call SetTaskResProcent(BiqTask, resAss.ResourceID, Percent)
+            End If
+          End If
+        Next CheckDate
+      Next resAss
     End If
   Next BiqTask
 
 End Sub
 
 'функция получения часов в день запланированных на ресурсе
-Public Function GetResLoad(CheckDate, BiqTask) As Single
+Public Function GetResLoadTask(CheckDate, BiqTask, TaskActorId) As Single
 
   Dim TaskRes As Resource
-  For Each TaskRes In BiqTask.Resources
-    TimePerest = 0
-                ' Цикл по всем задачам ресурса на обрабатываемый день
-    For Each resAss In TaskRes.Assignments
-      Set assTask = resAss.Task
-      If (assTask.Start <= CheckDate And assTask.Finish >= CheckDate) Then
-        Set TaskTSD = assTask.TimeScaleData(CheckDate, CheckDate, TimescaleUnit:=4)
-        For i = 1 To TaskTSD.Count
-          If Not TaskTSD(i).Value = "" Then
-            TimePerest = TimePerest + TaskTSD(i).Value / (60)  'Нагрузку часов в день
-          End If
-        Next i
-      End If
-    Next resAss
-  Next TaskRes
+  Dim resAss  As Assignment
+  
+  TimePerest = 0
+  ' Цикл по всем задачам ресурса на обрабатываемый день
+  For Each resAss In BiqTask.Assignments
+    If resAss.Start <= CheckDate And resAss.Finish >= CheckDate And resAss.ResourceID = TaskActorId Then
+      Set TaskTSD = resAss.TimeScaleData(CheckDate, CheckDate, TimescaleUnit:=4)
+      For i = 1 To TaskTSD.Count
+        If Not TaskTSD(i).Value = "" Then
+          TimePerest = TimePerest + TaskTSD(i).Value / (60)  'Нагрузку часов в день
+        End If
+      Next i
+    End If
+  Next resAss
+
+  GetResLoadTask = TimePerest
+
+End Function
+
+'функция получения часов в день запланированных на ресурсе
+Public Function GetResLoad(CheckDate, CheckRes) As Single
+
+  Dim resAss  As Assignment
+  
+  For Each resAss In CheckRes.Assignments
+    If resAss.Start <= CheckDate And resAss.Finish >= CheckDate Then
+      Set TaskTSD = resAss.TimeScaleData(CheckDate, CheckDate, TimescaleUnit:=4)
+      For i = 1 To TaskTSD.Count
+        If Not TaskTSD(i).Value = "" Then
+          TimePerest = TimePerest + TaskTSD(i).Value / (60)  'Нагрузку часов в день
+        End If
+      Next i
+    End If
+  Next resAss
   GetResLoad = TimePerest
 
 End Function
 
-'функция получения доступности
-Public Function GetResAvailability(BiqTask) As Single
-    
-  Dim TaskRes As Resource
+'функция получения доступности 0..1
+Public Function GetResAvailability(CheckDate, CheckRes) As Single
   Dim TaskAvailabity As Availability
-  For Each TaskRes In BiqTask.Resources
-    GetResAvailability = TaskRes.Availabilities(1).AvailableUnit
-  Next TaskRes
+  ResAvailability = 0
   
-End Function
+  For Each TaskAvailabity In  CheckRes.Availabilities
+    If TaskAvailabity.AvailableFrom < CheckDate And CheckDate < TaskAvailabity.AvailableTo Then
+      ResAvailability = ResAvailability + TaskAvailabity.AvailableUnit
+    End If 
+  Next TaskAvailabity
+  
+  GetResAvailability = ResAvailability / 100
+End Function 'GetResAvailability
 
 'функция замена даты для растяжение задач с типом НН
 Sub StretchTasks(IndexTaskFirst, IndexTaskLast)
@@ -265,7 +294,7 @@ Sub StretchTasks(IndexTaskFirst, IndexTaskLast)
         procent = HoursToWork / AllHoursInDiff * 100
         RoundProcent = WorksheetFunction.Round(procent + 0.5, 0)
         'Замена процента
-        BiqTaskDesc.SetField FieldID:=projectField_Actor, Value:=Left(BiqTaskDesc.GetField(FieldID:=projectField_Actor), InStr(BiqTaskDesc.GetField(FieldID:=projectField_Actor), "[") - 1) & "[" & RoundProcent & "%]"
+        Call SetTaskResProcent(BiqTaskDesc, -1, RoundProcent)
 
         'Текущие дата начала
         DateStartDesc = Mid(BiqTaskDesc.GetField(FieldID:=projectField_Start), 4)
@@ -282,37 +311,51 @@ Sub StretchTasks(IndexTaskFirst, IndexTaskLast)
 End Sub
 
 'функция назначения исполнителей
-Sub FillResourses(TaskGroupCK, FuncArea, TaskTeg, SystemCode, IndexTaskFirst, IndexTaskLast)
+Sub FillResources(TaskGroupCK, FuncArea, TaskTeg, SystemCode, IndexTaskFirst, IndexTaskLast)
    
   Dim BiqTask As Task
-  Set AllRes = ActiveProject.Resources
+  Dim Ass     As Assignment
+  Dim Res     As Resource
+  'Бежим по всем задачам требуеющих поиска исполнителей
   For Each BiqTask In ActiveProject.Tasks
-   If (BiqTask.id >= IndexTaskFirst And BiqTask.id <= IndexTaskLast) Then
-      'Получаем группу ресурсов
-      TaskActor = BiqTask.GetField(FieldID:=projectField_Actor)
-      For Each Res In AllRes
-        If (Res.GetField(FieldID:=projectField_ResGroupCk) = TaskGroupCK) And (TaskTeg = "" Or Res.GetField(FieldID:=projectField_Teg) = TaskTeg) _
-        And ((Res.GetField(FieldID:=projectField_FuncArea1) = FuncArea) Or (Res.GetField(FieldID:=projectField_FuncArea2) = FuncArea) Or (Res.GetField(FieldID:=projectField_FuncArea3) = FuncArea)) _
-        And ((Res.GetField(FieldID:=projectField_System1) = SystemCode) Or (Res.GetField(FieldID:=projectField_System2) = SystemCode)) _
-        And ((Res.GetField(FieldID:=projectField_ResGroup) = Mid(TaskActor, 1, InStr(TaskActor, "[") - 2))) Then
-          'TaskActor = Res.name + Mid(TaskActor, InStr(TaskActor, "["))
-          Percent = BiqTask.Assignments(1).Units
-          TaskActorId = Res.id
-        End If
-      Next Res
-      Call SetTaskResProcent(BiqTask, TaskActorId, Percent)
-      'BiqTask.SetField FieldID:=projectField_Actor, Value:=TaskActor
+    If (BiqTask.id >= IndexTaskFirst And BiqTask.id <= IndexTaskLast) Then
+      ' Бежим по всем необходимым ресурсам
+      For Each Ass In BiqTask.Assignments 
+        'Получаем группу ресурсов
+        TaskActor = Ass.ResourceName
+        'Бежим по всем досутпным ресурсам - ищем исполнителя
+        For Each Res In ActiveProject.Resources
+          If (Res.GetField(FieldID:=projectField_ResGroupCk) = TaskGroupCK) And (TaskTeg = "" Or Res.GetField(FieldID:=projectField_Teg) = TaskTeg) _
+          And ((Res.GetField(FieldID:=projectField_FuncArea1) = FuncArea) Or (Res.GetField(FieldID:=projectField_FuncArea2) = FuncArea) Or (Res.GetField(FieldID:=projectField_FuncArea3) = FuncArea)) _
+          And ((Res.GetField(FieldID:=projectField_System1) = SystemCode) Or (Res.GetField(FieldID:=projectField_System2) = SystemCode)) _
+          And (Res.GetField(FieldID:=projectField_ResGroup) = TaskActor) Then
+            Percent = Ass.Units
+            TaskActorId = Res.id
+            Call SetTaskResProcent(BiqTask, TaskActorId, Percent)
+            Exit For
+          End If
+        Next Res
+      Next Ass
     End If
   Next BiqTask
-    
 End Sub
 
 'Назначение ресурса на задачу
 Sub SetTaskResProcent(BiqTask, TaskActorId, Percent)
-    
-    BiqTask.Assignments(1).Delete'удаление первой задачи так как могут повторятся
+  Dim Ass As Assignment
+  'Попытка обновления если ресурс уже есть на задаче
+  For Each Ass In BiqTask.Assignments 
+    If TaskActorId = -1 Or Ass.ResourceID = TaskActorId Then
+      Ass.Units = Percent / 100
+      If TaskActorId <> -1 Then
+        Exit Sub
+      End If
+    End If
+  Next Ass
+  ' Если не нашли создаем новый
+  If TaskActorId <> -1 Then
     BiqTask.Assignments.Add BiqTask.id, TaskActorId, Percent
-    
+  End If
 End Sub
 
 'функция заполнения предшественников
@@ -565,7 +608,7 @@ Private Sub DeleteButton_Click()
 
   Dim BiqTask As Task ' Для поиска задачи по BIQ
   InitFieldConst
-  BIQNum = "BIQ-" + TBNumBIQFDelete 'Номер BIQ-задачи
+  BIQNum = TBNumBIQ 'Номер BIQ-задачи
   BiqTaskID = 0
   For Each BiqTask In ActiveProject.Tasks
     If BiqTask.GetField(FieldID:=projectField_JirID) = BIQNum Then
@@ -581,12 +624,14 @@ End Sub
 
 ' Растягивание задачи в зависимости от загрузки ресурсов
 Sub Perest()
+  Dim resAss  As Assignment
+  Dim Res     As Resource
+  Dim SecRes  As Resource
+  Dim assTask As Task
     
-  Set AllRes = ActiveProject.Resources
-  For Each Res In AllRes
-    Set resAssArr = Res.Assignments
+  For Each Res In ActiveProject.Resources
     '1
-    For Each resAss In resAssArr
+    For Each resAss In Res.Assignments
       Set assTask = resAss.Task
       DurationWorkDaysPerest = assTask.DurationText 'Длительность в рабочих днях
       StartDatePerest = Mid(Mid(assTask.StartText, 4), 1, 6) & "20" & Mid(assTask.StartText, 10) 'Дата начала задачи
@@ -595,7 +640,7 @@ Sub Perest()
       CurrenRes = -1
       CurrentStartDate = "31.12.2040"
       GroupFirstRes = Res.Group
-      For Each SecRes In AllRes
+      For Each SecRes In ActiveProject.Resources
         '2
         SecData = StartDatePerest
         i = 0
