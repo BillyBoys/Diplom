@@ -14,6 +14,7 @@ Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
 
+
 'Названия полей в MS Project
 Dim projectField_Name         As Long
 Dim projectField_JirID        As Long
@@ -168,7 +169,7 @@ Sub CreateTasksByExcel(NumBIQ, StartDate, ExcelFileName)
   
   'функция заполнения предшественников
   Call TaskPredInPut(ExcelSheet, StartDate, IndexTaskFirst, IndexTaskLast)
-  
+  xlobject.Quit 'Закрытие Excel файла
   'Заполняем исполнителей
   Call FillResourses(TaskGroupCK, FuncArea, TaskTeg, SystemCode, IndexTaskFirst, IndexTaskLast)
   
@@ -177,8 +178,6 @@ Sub CreateTasksByExcel(NumBIQ, StartDate, ExcelFileName)
       
   'Растягиваем даты задач
   Call StretchTasks(IndexTaskFirst, IndexTaskLast)
-      
-  xlobject.Quit 'Закрытие Excel файла
     
 End Sub
 
@@ -192,16 +191,17 @@ Sub ExtendTasks(IndexTaskFirst, IndexTaskLast)
       'Бежим по всем датам задачи
       For CheckDate = BiqTask.Start To BiqTask.Finish
         TimeHoursOneDay = GetResLoad(CheckDate, BiqTask)
+        PercentOneDay = GetResAvailability(BiqTask)
       Next CheckDate
     End If
   Next BiqTask
 
 End Sub
 
+'функция получения часов в день запланированных на ресурсе
 Public Function GetResLoad(CheckDate, BiqTask) As Single
 
-Dim TaskRes As Resource
-
+  Dim TaskRes As Resource
   For Each TaskRes In BiqTask.Resources
     TimePerest = 0
 		' Цикл по всем задачам ресурса на обрабатываемый день
@@ -219,6 +219,17 @@ Dim TaskRes As Resource
   Next TaskRes
   GetResLoad = TimePerest
 
+End Function
+
+'функция получения доступности
+Public Function GetResAvailability(BiqTask) As Single
+    
+  Dim TaskRes As Resource
+  Dim TaskAvailabity As Availability
+  For Each TaskRes In BiqTask.Resources
+    GetResAvailability = TaskRes.Availabilities(1).AvailableUnit
+  Next TaskRes
+  
 End Function
 
 'функция замена даты для растяжение задач с типом НН
