@@ -44,7 +44,6 @@ Dim projectField_System2      As Long
 
 ' Кнопка импортировать
 Private Sub ImportButton_Click()
-
   TimeForSet = Timer
   'Запись времени в текстовик
   Call SetTimeForTxt(0, "Начало импорта ", True, False)
@@ -59,14 +58,30 @@ Private Sub ImportButton_Click()
   End If
   'Запись времени в текстовик
   Call SetTimeForTxt(Timer - TimeForSet, "Конец импорта ", False, True)
+  
+  'Запись протокола работы
+  Call SetProtocolJob("Импорт")
 End Sub
 
-Sub SetTimeForTxt(TimeForSet As Single, CallFunc As String, FirstEntry, LastEntry)
-
+'Запись протокола работы
+Sub SetProtocolJob(CallFunc)
   Dim ff As Integer, ws As Object
   'Получаем свободный номер для открываемого файла
   ff = FreeFile
   'Открываем (или создаем) файл для чтения и записи
+  Open ThisProject.Path & "\ProtocolJob.txt" For Append As ff
+  Print #ff, CallFunc & " " & TBNumBIQ 
+  'Закрываем файл
+  Close ff
+
+End Sub
+
+'Запись времени
+Sub SetTimeForTxt(TimeForSet As Single, CallFunc As String, FirstEntry, LastEntry)
+  Dim ff As Integer, ws As Object
+  'Получаем свободный номер для открываемого файла
+  ff = FreeFile
+  'Открываем (или создаем) файл для перезаписи или дозаписи
   If FirstEntry = True Then
     Open ThisProject.Path & "\LogTime.txt" For Output As ff
     Print #ff, CallFunc
@@ -82,14 +97,15 @@ Sub SetTimeForTxt(TimeForSet As Single, CallFunc As String, FirstEntry, LastEntr
     ws.Run ThisProject.Path & "\LogTime.txt"
     Set ws = Nothing
   End If
+  
 End Sub
 
 ' Инициализация полей
 Private Sub UserForm_Initialize()
   tbStartDate = Format(Date, "dd/mm/yyyy")
   TBNumBIQ = "BIQ-5257"
-  FileNameCFTTextBox = "C:\Users\Эрнест\Documents\GitHub\Diplom\test\Расшифровка ЭО BIQ5257.xlsx"
-  'FileNameCFTTextBox = "d:\info\Эрнест\Diplom\test\Расшифровка ЭО BIQ5257.xlsx"
+  'FileNameCFTTextBox = "C:\Users\Эрнест\Documents\GitHub\Diplom\test\Расшифровка ЭО BIQ5257.xlsx"
+  FileNameCFTTextBox = "d:\info\Эрнест\Diplom\test\Расшифровка ЭО BIQ5257.xlsx"
   TBNumBIQFDelete = 5257
 End Sub
 
@@ -108,7 +124,7 @@ Sub CreateTasksByExcel(NumBIQ, StartDate, ExcelFileName)
               
   ' Если не удалось открыть, то выходим
   If xlobject.ActiveWorkbook Is Nothing Then
-                xlobject.Quit 'Закрытие Excel файла
+    xlobject.Quit 'Закрытие Excel файла
     Exit Sub
   End If
   
@@ -677,9 +693,11 @@ Private Sub DeleteButton_Click()
       Next BiqTask
       If BiqTaskID = 0 Then
         MsgBox ("Такой BIQ-задачи нет")
+        Exit Sub
       End If  
   End If
-        
+  'Запись протокола работы
+  Call SetProtocolJob("Удаление")
 End Sub
 
 ' Растягивание задачи в зависимости от загрузки ресурсов
