@@ -91,8 +91,8 @@ End Sub
 Private Sub UserForm_Initialize()
   tbStartDate = Format(Date, "dd/mm/yyyy")
   TBNumBIQ = "BIQ-5257"
-  'FileNameCFTTextBox = "C:\Users\Эрнест\Documents\GitHub\Diplom\test\Расшифровка ЭО BIQ5257.xlsx"
-  FileNameCFTTextBox = "d:\info\Эрнест\Diplom\test\Расшифровка ЭО BIQ5257.xlsx"
+  FileNameCFTTextBox = "C:\Users\Эрнест\Documents\GitHub\Diplom\test\Расшифровка ЭО BIQ5257.xlsx"
+  'FileNameCFTTextBox = "d:\info\Эрнест\Diplom\test\Расшифровка ЭО BIQ5257.xlsx"
   TBNumBIQFDelete = 5257
 End Sub
 
@@ -611,16 +611,18 @@ Private Sub DeleteButton_Click()
   InitFieldConst
   BIQNum = TBNumBIQ 'Номер BIQ-задачи
   BiqTaskID = 0
-  For Each BiqTask In ActiveProject.Tasks
-    If BiqTask.GetField(FieldID:=projectField_JirID) = BIQNum Then
-      BiqTaskID = BiqTask.id
-      BiqTask.Delete 'Удаление BIQ-задачи
-    End If
-  Next BiqTask
-  If BiqTaskID = 0 Then
-    MsgBox ("Такой BIQ-задачи нет")
-  End If
-  
+	If msgbox("Вы уверены что хотите удалить " & BIQNum & "?",vbYesNo,"Удаление")=vbYes then
+		For Each BiqTask In ActiveProject.Tasks
+			If BiqTask.GetField(FieldID:=projectField_JirID) = BIQNum Then
+				BiqTaskID = BiqTask.id
+				BiqTask.Delete 'Удаление BIQ-задачи
+			End If
+		Next BiqTask
+		If BiqTaskID = 0 Then
+			MsgBox ("Такой BIQ-задачи нет")
+		End If
+  End if
+	
 End Sub
 
 ' Растягивание задачи в зависимости от загрузки ресурсов
