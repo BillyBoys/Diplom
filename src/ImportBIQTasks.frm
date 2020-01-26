@@ -1,7 +1,7 @@
 VERSION 5.00
 Begin {C62A69F0-16DC-11CE-9E98-00AA00574A4F} ImportBIQTasks 
    Caption         =   "Перенос BIQ задач "
-   ClientHeight    =   6750
+   ClientHeight    =   5145
    ClientLeft      =   120
    ClientTop       =   465
    ClientWidth     =   8325.001
@@ -13,6 +13,7 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
+
 
 '==========================================================================='
 'Скрипт импорта задач из оценки'
@@ -255,10 +256,10 @@ Public Function GetResAvailability(CheckDate, CheckRes) As Single
   Dim TaskAvailabity As Availability
   ResAvailability = 0
   
-  For Each TaskAvailabity In  CheckRes.Availabilities
+  For Each TaskAvailabity In CheckRes.Availabilities
     If TaskAvailabity.AvailableFrom < CheckDate And CheckDate < TaskAvailabity.AvailableTo Then
       ResAvailability = ResAvailability + TaskAvailabity.AvailableUnit
-    End If 
+    End If
   Next TaskAvailabity
   
   GetResAvailability = ResAvailability / 100
@@ -320,7 +321,7 @@ Sub FillResources(TaskGroupCK, FuncArea, TaskTeg, SystemCode, IndexTaskFirst, In
   For Each BiqTask In ActiveProject.Tasks
     If (BiqTask.id >= IndexTaskFirst And BiqTask.id <= IndexTaskLast) Then
       ' Бежим по всем необходимым ресурсам
-      For Each Ass In BiqTask.Assignments 
+      For Each Ass In BiqTask.Assignments
         'Получаем группу ресурсов
         TaskActor = Ass.ResourceName
         'Бежим по всем досутпным ресурсам - ищем исполнителя
@@ -344,7 +345,7 @@ End Sub
 Sub SetTaskResProcent(BiqTask, TaskActorId, Percent)
   Dim Ass As Assignment
   'Попытка обновления если ресурс уже есть на задаче
-  For Each Ass In BiqTask.Assignments 
+  For Each Ass In BiqTask.Assignments
     If TaskActorId = -1 Or Ass.ResourceID = TaskActorId Then
       Ass.Units = Percent / 100
       If TaskActorId <> -1 Then
