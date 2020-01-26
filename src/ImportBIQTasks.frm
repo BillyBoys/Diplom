@@ -176,14 +176,30 @@ Sub CreateTasksByExcel(NumBIQ, StartDate, ExcelFileName)
       
   'Растягиваем даты задач
   Call StretchTasks(IndexTaskFirst, IndexTaskLast)
-        
+  
+  'Дата завершения
+  Call TaskDateEnd (IndexTaskFirst, IndexTaskLast)
+  
   'Запись времени в текстовик
   Call SetTimeForTxt(Timer - TimeForSet, "  CreateTasksByExcel: ", False, False)
 End Sub
 
+'запись даты завершения
+Sub TaskDateEnd(IndexTaskFirst, IndexTaskLast)
+  Dim BiqTask As Task
+  Dim ForDate As Date
+  For Each BiqTask In ActiveProject.Tasks
+    If (BiqTask.id >= IndexTaskFirst And BiqTask.id <= IndexTaskLast) Then
+      If(BiqTask.Finish>ForDate or BiqTask.id = IndexTaskFirst) then
+        ForDate=BiqTask.Finish
+      End if
+    End if
+  Next BiqTask
+  tbEndDate.Text=ForDate
+End Sub
+
 'функция растягивания задач для устранения перегруза
 Sub ExtendTasks(IndexTaskFirst, IndexTaskLast)
-
   'Начинается отсчет времени функции
   TimeForSet = Timer
   Dim BiqTask As Task
@@ -217,10 +233,8 @@ End Sub
 
 'функция получения часов в день запланированных на ресурсе
 Public Function GetResLoadTask(CheckDate, BiqTask, TaskActorId) As Single
-
   Dim TaskRes As Resource
   Dim resAss  As Assignment
-  
   TimePerest = 0
   ' Цикл по всем задачам ресурса на обрабатываемый день
   For Each resAss In BiqTask.Assignments
@@ -233,7 +247,6 @@ Public Function GetResLoadTask(CheckDate, BiqTask, TaskActorId) As Single
       Next i
     End If
   Next resAss
-
   GetResLoadTask = TimePerest
 
 End Function 'GetResLoadTask
@@ -265,13 +278,12 @@ Public Function GetResAvailability(CheckDate, CheckRes) As Single
       ResAvailability = ResAvailability + TaskAvailabity.AvailableUnit
     End If
   Next TaskAvailabity
-  
   GetResAvailability = ResAvailability / 100
+  
 End Function 'GetResAvailability
 
 'функция замена даты для растяжение задач с типом НН
 Sub StretchTasks(IndexTaskFirst, IndexTaskLast)
-
   'Начинается отсчет времени функции
   TimeForSet = Timer
   Dim BiqTaskPred As Task
@@ -314,6 +326,7 @@ Sub StretchTasks(IndexTaskFirst, IndexTaskLast)
       End If
     End If
   Next BiqTaskDesc
+  
   'Запись времени в текстовик
   Call SetTimeForTxt(Timer - TimeForSet, "  StretchTasks: ", False, False)
 
@@ -321,7 +334,6 @@ End Sub
 
 'функция назначения исполнителей
 Sub FillResources(TaskGroupCK, FuncArea, TaskTeg, SystemCode, IndexTaskFirst, IndexTaskLast)
-  
   'Начинается отсчет времени функции
   TimeForSet = Timer
   Dim BiqTask As Task
@@ -375,7 +387,6 @@ End Sub
 
 'функция заполнения предшественников
 Sub TaskPredInPut(ExcelSheet, BiqStartDate, IndexTaskFirst, IndexTaskLast)
-
   'Начинается отсчет времени функции
   TimeForSet = Timer
   i = 8
@@ -395,7 +406,7 @@ Sub TaskPredInPut(ExcelSheet, BiqStartDate, IndexTaskFirst, IndexTaskLast)
       i = i + 1
     End If
   Next BiqTask
-              'Функция замены предшественников
+  'Функция замены предшественников
   Call Zerotasksdel(IndexTaskFirst, IndexTaskLast)
   'Запись времени в текстовик
   Call SetTimeForTxt(Timer - TimeForSet, "  TaskPredInPut: ", False, False)
