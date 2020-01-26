@@ -15,6 +15,7 @@ Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
 
 
+
 '==========================================================================='
 'Скрипт импорта задач из оценки'
 '==========================================================================='
@@ -44,42 +45,43 @@ Dim projectField_System2      As Long
 ' Кнопка импортировать
 Private Sub ImportButton_Click()
 
-	TimeForSet=Timer
-	'Запись времени в текстовик
-	Call SetTimeForTxt(0,"Начало импорта ",True,False)  
-	' Создаем задачи по оценке ЦФТ
+  TimeForSet = Timer
+  'Запись времени в текстовик
+  Call SetTimeForTxt(0, "Начало импорта ", True, False)
+  ' Создаем задачи по оценке ЦФТ
   If Len(Trim(FileNameCFTTextBox.Text)) <> 0 Then
     Call CreateTasksByExcel(TBNumBIQ, CDate(tbStartDate.Value), FileNameCFTTextBox.Text)
-	End If
-	
+  End If
+        
   ' Создаем задачи по оценки БИСквит
   If Len(Trim(FileNameBISTextBox.Text)) <> 0 Then
     Call CreateTasksByExcel(TBNumBIQ, CDate(tbStartDate.Value), FileNameBISTextBox.Text)
-	End If
-	'Запись времени в текстовик
-	Call SetTimeForTxt(Timer-TimeForSet,"Конец импорта ",False,True)  
+  End If
+  'Запись времени в текстовик
+  Call SetTimeForTxt(Timer - TimeForSet, "Конец импорта ", False, True)
 End Sub
 
-Sub SetTimeForTxt(TimeForSet as single,CallFunc as String,FirstEntry,LastEntry)
-	Dim ff As Integer, ws As Object
-	'Получаем свободный номер для открываемого файла
-	ff = FreeFile
-	'Открываем (или создаем) файл для чтения и записи
-	if FirstEntry=True then
-		Open ThisProject.Path & "\LogTime.txt" For OUTPUT As ff
-		Print #ff, CallFunc
-	else
-		Open ThisProject.Path & "\LogTime.txt" For APPEND As ff
-		Print #ff,CallFunc & TimeForSet
-	end if
-	'Закрываем файл
-	Close ff
-	'Открываем файл для просмотра
-	if LastEntry=True then
-		Set ws = CreateObject("WScript.Shell")
-		ws.Run ThisProject.Path & "\LogTime.txt"
-		Set ws = Nothing
-	end if
+Sub SetTimeForTxt(TimeForSet As Single, CallFunc As String, FirstEntry, LastEntry)
+
+  Dim ff As Integer, ws As Object
+  'Получаем свободный номер для открываемого файла
+  ff = FreeFile
+  'Открываем (или создаем) файл для чтения и записи
+  If FirstEntry = True Then
+    Open ThisProject.Path & "\LogTime.txt" For Output As ff
+    Print #ff, CallFunc
+  Else
+    Open ThisProject.Path & "\LogTime.txt" For Append As ff
+    Print #ff, CallFunc & TimeForSet
+  End If
+  'Закрываем файл
+  Close ff
+  'Открываем файл для просмотра
+  If LastEntry = True Then
+    Set ws = CreateObject("WScript.Shell")
+    ws.Run ThisProject.Path & "\LogTime.txt"
+    Set ws = Nothing
+  End If
 End Sub
 
 ' Инициализация полей
@@ -93,9 +95,9 @@ End Sub
 
 ' Создание задач по оценке
 Sub CreateTasksByExcel(NumBIQ, StartDate, ExcelFileName)
-	
-	'Начинается отсчет времени функции
-	TimeForSet=Timer
+        
+  'Начинается отсчет времени функции
+  TimeForSet = Timer
   Dim BiqTask As Task ' Для поиска задачи по BIQ
   ' Получаем название полей в MS Project
   InitFieldConst
@@ -106,7 +108,7 @@ Sub CreateTasksByExcel(NumBIQ, StartDate, ExcelFileName)
               
   ' Если не удалось открыть, то выходим
   If xlobject.ActiveWorkbook Is Nothing Then
-		xlobject.Quit 'Закрытие Excel файла
+                xlobject.Quit 'Закрытие Excel файла
     Exit Sub
   End If
   
@@ -174,16 +176,16 @@ Sub CreateTasksByExcel(NumBIQ, StartDate, ExcelFileName)
       
   'Растягиваем даты задач
   Call StretchTasks(IndexTaskFirst, IndexTaskLast)
-	
+        
   'Запись времени в текстовик
-	Call SetTimeForTxt(Timer-TimeForSet,"  CreateTasksByExcel: ",False,False)  
+  Call SetTimeForTxt(Timer - TimeForSet, "  CreateTasksByExcel: ", False, False)
 End Sub
 
 'функция растягивания задач для устранения перегруза
 Sub ExtendTasks(IndexTaskFirst, IndexTaskLast)
 
-	'Начинается отсчет времени функции
-	TimeForSet=Timer
+  'Начинается отсчет времени функции
+  TimeForSet = Timer
   Dim BiqTask As Task
   Dim TaskRes As Resource
   Dim resAss  As Assignment
@@ -208,8 +210,8 @@ Sub ExtendTasks(IndexTaskFirst, IndexTaskLast)
       Next resAss
     End If
   Next BiqTask
-	'Запись времени в текстовик
-	Call SetTimeForTxt(Timer-TimeForSet,"  ExtendTasks: ",False,False)  
+  'Запись времени в текстовик
+  Call SetTimeForTxt(Timer - TimeForSet, "  ExtendTasks: ", False, False)
 
 End Sub
 
@@ -234,7 +236,7 @@ Public Function GetResLoadTask(CheckDate, BiqTask, TaskActorId) As Single
 
   GetResLoadTask = TimePerest
 
-End Function'GetResLoadTask
+End Function 'GetResLoadTask
 
 'функция получения часов в день запланированных на ресурсе
 Public Function GetResLoad(CheckDate, CheckRes) As Single
@@ -251,7 +253,7 @@ Public Function GetResLoad(CheckDate, CheckRes) As Single
   Next resAss
   GetResLoad = TimePerest
 
-End Function'GetResLoad
+End Function 'GetResLoad
 
 'функция получения доступности 0..1
 Public Function GetResAvailability(CheckDate, CheckRes) As Single
@@ -270,8 +272,8 @@ End Function 'GetResAvailability
 'функция замена даты для растяжение задач с типом НН
 Sub StretchTasks(IndexTaskFirst, IndexTaskLast)
 
-	'Начинается отсчет времени функции
-	TimeForSet=Timer
+  'Начинается отсчет времени функции
+  TimeForSet = Timer
   Dim BiqTaskPred As Task
   Dim BiqTaskDesc As Task
   'Цикл поиска задачи с типом предшественников НН
@@ -312,16 +314,16 @@ Sub StretchTasks(IndexTaskFirst, IndexTaskLast)
       End If
     End If
   Next BiqTaskDesc
-	'Запись времени в текстовик
-	Call SetTimeForTxt(Timer-TimeForSet,"  StretchTasks: ",False,False)
+  'Запись времени в текстовик
+  Call SetTimeForTxt(Timer - TimeForSet, "  StretchTasks: ", False, False)
 
 End Sub
 
 'функция назначения исполнителей
 Sub FillResources(TaskGroupCK, FuncArea, TaskTeg, SystemCode, IndexTaskFirst, IndexTaskLast)
   
-	'Начинается отсчет времени функции
-	TimeForSet=Timer	
+  'Начинается отсчет времени функции
+  TimeForSet = Timer
   Dim BiqTask As Task
   Dim Ass     As Assignment
   Dim Res     As Resource
@@ -337,7 +339,7 @@ Sub FillResources(TaskGroupCK, FuncArea, TaskTeg, SystemCode, IndexTaskFirst, In
           If (Res.GetField(FieldID:=projectField_ResGroupCk) = TaskGroupCK) And (TaskTeg = "" Or Res.GetField(FieldID:=projectField_Teg) = TaskTeg) _
           And ((Res.GetField(FieldID:=projectField_FuncArea1) = FuncArea) Or (Res.GetField(FieldID:=projectField_FuncArea2) = FuncArea) Or (Res.GetField(FieldID:=projectField_FuncArea3) = FuncArea)) _
           And ((Res.GetField(FieldID:=projectField_System1) = SystemCode) Or (Res.GetField(FieldID:=projectField_System2) = SystemCode)) _
-          And (Res.GetField(FieldID:=projectField_ResGroup) = Left(TaskActor,len(TaskActor)-1)) Then
+          And (Res.GetField(FieldID:=projectField_ResGroup) = Left(TaskActor, Len(TaskActor) - 1)) Then
             Percent = Ass.Units
             TaskActorId = Res.id
             Call SetTaskResProcent(BiqTask, TaskActorId, Percent)
@@ -347,9 +349,9 @@ Sub FillResources(TaskGroupCK, FuncArea, TaskTeg, SystemCode, IndexTaskFirst, In
       Next Ass
     End If
   Next BiqTask
-	'Запись времени в текстовик
-	Call SetTimeForTxt(Timer-TimeForSet,"  FillResources: ",False,False) 
-	
+  'Запись времени в текстовик
+  Call SetTimeForTxt(Timer - TimeForSet, "  FillResources: ", False, False)
+        
 End Sub
 
 'Назначение ресурса на задачу
@@ -367,15 +369,15 @@ Sub SetTaskResProcent(BiqTask, TaskActorId, Percent)
   ' Если не нашли создаем новый
   If TaskActorId <> -1 Then
     BiqTask.Assignments.Add BiqTask.id, TaskActorId, Percent
-		BiqTask.Assignments(BiqTask.Assignments.Count-1 ).Delete
+    BiqTask.Assignments(BiqTask.Assignments.Count - 1).Delete
   End If
 End Sub
 
 'функция заполнения предшественников
 Sub TaskPredInPut(ExcelSheet, BiqStartDate, IndexTaskFirst, IndexTaskLast)
 
-	'Начинается отсчет времени функции
-	TimeForSet=Timer
+  'Начинается отсчет времени функции
+  TimeForSet = Timer
   i = 8
   Dim BiqTask As Task
   For Each BiqTask In ActiveProject.Tasks
@@ -395,8 +397,8 @@ Sub TaskPredInPut(ExcelSheet, BiqStartDate, IndexTaskFirst, IndexTaskLast)
   Next BiqTask
               'Функция замены предшественников
   Call Zerotasksdel(IndexTaskFirst, IndexTaskLast)
-	'Запись времени в текстовик
-	Call SetTimeForTxt(Timer-TimeForSet,"  TaskPredInPut: ",False,False)  
+  'Запись времени в текстовик
+  Call SetTimeForTxt(Timer - TimeForSet, "  TaskPredInPut: ", False, False)
   
 End Sub
 
@@ -497,13 +499,13 @@ Public Function DelPred(TaskPredecessors, IndexTaskFirst, IndexTaskLast) As Stri
   End If
   DelPred = NewPredecessors
 
-End Function'DelPred
+End Function 'DelPred
 
 ' Создание задачи в MS Project
 Sub AddNewTask(MainTask, ByRef FirstTask, BiqStartDate, TaskJiraId, TaskType, TaskName, TaskHours, BiqTaskID, ToTaskDays, TaskTypeITService, TaskTypeWork, TaskActor, ByRef Index, ByRef IndexTaskFirst, ByRef IndexTaskLast)
   
-	'Начинается отсчет времени функции
-	TimeForSet=Timer
+  'Начинается отсчет времени функции
+  TimeForSet = Timer
   ' Создаем задачу
   If BiqTaskID = 0 Then
     Set NewTask = ActiveProject.Tasks.Add(TaskName)
@@ -546,9 +548,9 @@ Sub AddNewTask(MainTask, ByRef FirstTask, BiqStartDate, TaskJiraId, TaskType, Ta
   NewTask.SetField FieldID:=projectField_JiraProjName, Value:=TaskType
   NewTask.SetField FieldID:=projectField_TypeWork, Value:=TaskTypeWork
   NewTask.SetField FieldID:=projectField_Actor, Value:=TaskActor
-	
-	'Запись времени в текстовик
-	Call SetTimeForTxt(Timer-TimeForSet,"  AddNewTask: ",False,False)  
+        
+  'Запись времени в текстовик
+  Call SetTimeForTxt(Timer - TimeForSet, "  AddNewTask: ", False, False)
   
 End Sub
 
@@ -581,35 +583,35 @@ End Sub
 ' Выбор оценки по ЦФТ
 Private Sub GetExcelFileCFTButton_Click()
   FileNameCFTTextBox.Text = ShowGetOpenDialog()
-	If(TBNumBIQ.Text="") Then
-		TBNumBIQ.Text=GetBiqNum()
-	End If
+  If (TBNumBIQ.Text = "") Then
+    TBNumBIQ.Text = GetBiqNum()
+  End If
 End Sub
 
 ' Выбор оценки по БИСквиту
 Private Sub GetExcelFileBISButton_Click()
   FileNameBISTextBox.Text = ShowGetOpenDialog()
-	If(TBNumBIQ.Text="") Then
-		TBNumBIQ.Text=GetBiqNum()
-	end If
+    If (TBNumBIQ.Text = "") Then
+      TBNumBIQ.Text = GetBiqNum()
+    End If
 End Sub
 
 'Номер оценки из файла
-Public Function GetBiqNum() as string
-	PathToExc=FileNameCFTTextBox.Text
-	Set xlobject = CreateObject("Excel.Application")
+Public Function GetBiqNum() As String
+  PathToExc = FileNameCFTTextBox.Text
+  Set xlobject = CreateObject("Excel.Application")
   xlobject.Workbooks.Open PathToExc
   ' Если не удалось открыть, то выходим
   If xlobject.ActiveWorkbook Is Nothing Then
-		xlobject.Quit 'Закрытие Excel файла
+    xlobject.Quit 'Закрытие Excel файла
     Exit Function
   End If
   Set ExcelSheet = xlobject.ActiveWorkbook.Sheets(4)
-	BIQName = ExcelSheet.Cells(1, 3)'Название BIQ
-	xlobject.Quit 'Закрытие Excel файла
-	GetBiqNum = Left(BIQName, InStr(BIQName, " ")-1)
-	
-End Function'GetBiqNum
+  BIQName = ExcelSheet.Cells(1, 3) 'Название BIQ
+  xlobject.Quit 'Закрытие Excel файла
+  GetBiqNum = Left(BIQName, InStr(BIQName, " ") - 1)
+        
+End Function 'GetBiqNum
 
 'Функция открытия проводника для выбора файла
 Public Function ShowGetOpenDialog() As String
@@ -631,7 +633,7 @@ Public Function ShowGetOpenDialog() As String
   End With
   Set xlObj = Nothing
   
-End Function'ShowGetOpenDialog
+End Function 'ShowGetOpenDialog
 
 'Удаление всех задач с нулем часов
 Sub DeleteAllZeroTasks(IndexTaskFirst, IndexTaskLast)
@@ -655,18 +657,18 @@ Private Sub DeleteButton_Click()
   InitFieldConst
   BIQNum = TBNumBIQ 'Номер BIQ-задачи
   BiqTaskID = 0
-	If msgbox("Вы уверены что хотите удалить " & BIQNum & "?",vbYesNo,"Удаление")=vbYes Then
-		For Each BiqTask In ActiveProject.Tasks
-			If BiqTask.GetField(FieldID:=projectField_JirID) = BIQNum Then
-				BiqTaskID = BiqTask.id
-				BiqTask.Delete 'Удаление BIQ-задачи
-			End If
-		Next BiqTask
-		If BiqTaskID = 0 Then
-			MsgBox ("Такой BIQ-задачи нет")
-		End If
+    If MsgBox("Вы уверены что хотите удалить " & BIQNum & "?", vbYesNo, "Удаление") = vbYes Then
+      For Each BiqTask In ActiveProject.Tasks
+        If BiqTask.GetField(FieldID:=projectField_JirID) = BIQNum Then
+          BiqTaskID = BiqTask.id
+          BiqTask.Delete 'Удаление BIQ-задачи
+        End If
+      Next BiqTask
+      If BiqTaskID = 0 Then
+        MsgBox ("Такой BIQ-задачи нет")
+      End If  
   End If
-	
+        
 End Sub
 
 ' Растягивание задачи в зависимости от загрузки ресурсов
