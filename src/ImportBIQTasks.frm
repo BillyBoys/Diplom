@@ -76,6 +76,7 @@ End Sub
 
 ' Кнопка импортировать
 Private Sub ImportButton_Click()
+
   ' Создаем задачи по оценке ЦФТ
   If Len(Trim(FileNameCFTTextBox.Text)) <> 0 Then
     Call CreateTasksByExcel(TBNumBIQ, CDate(tbStartDate.Value), FileNameCFTTextBox.Text)
@@ -84,7 +85,6 @@ Private Sub ImportButton_Click()
   If Len(Trim(FileNameBISTextBox.Text)) <> 0 Then
     Call CreateTasksByExcel(TBNumBIQ, CDate(tbStartDate.Value), FileNameBISTextBox.Text)
   End If
-  
 End Sub
 
 ' Инициализация полей
@@ -109,6 +109,7 @@ Sub CreateTasksByExcel(NumBIQ, StartDate, ExcelFileName)
               
   ' Если не удалось открыть, то выходим
   If xlobject.ActiveWorkbook Is Nothing Then
+		xlobject.Quit 'Закрытие Excel файла
     Exit Sub
   End If
   
@@ -230,13 +231,11 @@ Public Function GetResLoadTask(CheckDate, BiqTask, TaskActorId) As Single
 
   GetResLoadTask = TimePerest
 
-End Function
+End Function'GetResLoadTask
 
 'функция получения часов в день запланированных на ресурсе
 Public Function GetResLoad(CheckDate, CheckRes) As Single
-
   Dim resAss  As Assignment
-  
   For Each resAss In CheckRes.Assignments
     If resAss.Start <= CheckDate And resAss.Finish >= CheckDate Then
       Set TaskTSD = resAss.TimeScaleData(CheckDate, CheckDate, TimescaleUnit:=4)
@@ -249,7 +248,7 @@ Public Function GetResLoad(CheckDate, CheckRes) As Single
   Next resAss
   GetResLoad = TimePerest
 
-End Function
+End Function'GetResLoad
 
 'функция получения доступности 0..1
 Public Function GetResAvailability(CheckDate, CheckRes) As Single
@@ -481,7 +480,7 @@ Public Function DelPred(TaskPredecessors, IndexTaskFirst, IndexTaskLast) As Stri
   End If
   DelPred = NewPredecessors
 
-End Function
+End Function'DelPred
 
 ' Создание задачи в MS Project
 Sub AddNewTask(MainTask, ByRef FirstTask, BiqStartDate, TaskJiraId, TaskType, TaskName, TaskHours, BiqTaskID, ToTaskDays, TaskTypeITService, TaskTypeWork, TaskActor, ByRef Index, ByRef IndexTaskFirst, ByRef IndexTaskLast)
@@ -560,12 +559,35 @@ End Sub
 ' Выбор оценки по ЦФТ
 Private Sub GetExcelFileCFTButton_Click()
   FileNameCFTTextBox.Text = ShowGetOpenDialog()
+	if(TBNumBIQ.Text="") then
+		TBNumBIQ.Text=GetBiqNum()
+	end if
 End Sub
 
 ' Выбор оценки по БИСквиту
 Private Sub GetExcelFileBISButton_Click()
   FileNameBISTextBox.Text = ShowGetOpenDialog()
+	if(TBNumBIQ.Text="")
+		TBNumBIQ.Text=GetBiqNum()
+	end if
 End Sub
+
+'Номер оценки из файла
+Public Function GetBiqNum() as string
+	PathToExc=FileNameCFTTextBox.Text
+	Set xlobject = CreateObject("Excel.Application")
+  xlobject.Workbooks.Open PathToExc
+  ' Если не удалось открыть, то выходим
+  If xlobject.ActiveWorkbook Is Nothing Then
+		xlobject.Quit 'Закрытие Excel файла
+    Exit Function
+  End If
+  Set ExcelSheet = xlobject.ActiveWorkbook.Sheets(4)
+	BIQName = ExcelSheet.Cells(1, 3)'Название BIQ
+	xlobject.Quit 'Закрытие Excel файла
+	GetBiqNum = Left(BIQName, InStr(BIQName, " ")-1)
+	
+End Function'GetBiqNum
 
 'Функция открытия проводника для выбора файла
 Public Function ShowGetOpenDialog() As String
@@ -587,7 +609,7 @@ Public Function ShowGetOpenDialog() As String
   End With
   Set xlObj = Nothing
   
-End Function
+End Function'ShowGetOpenDialog
 
 'Удаление всех задач с нулем часов
 Sub DeleteAllZeroTasks(IndexTaskFirst, IndexTaskLast)
