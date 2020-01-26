@@ -41,50 +41,45 @@ Dim projectField_FuncArea3    As Long
 Dim projectField_System1      As Long
 Dim projectField_System2      As Long
 
-
-Private Sub HoursRes_Click()
-
-' Dim taskTime          As Variant
-' Dim arrTime           As Variant
-' Dim TSV               As TimeScaleValues
-' Dim resAssArr         As Assignments
-' Определение доступности ресурса
-'    Set rs = ActiveProject.Resources
-'    arrTime = 0
-'    For Each r In rs
-'        If r.name = ResNameForHours Then
-'            Set resAssArr = r.Assignments
-'            For Each resAss In resAssArr
-'                Set assTask = resAss.Task
-'                Set TSV = assTask.TimeScaleData(CDate(StartDateForHours.Value), CDate(EndDateForHours.Value), TimescaleUnit:=4)
-'                For i = 1 To TSV.Count
-'                        taskTime = ""
-'                    If Not TSV(i).Value = "" Then
-'                        taskTime = TSV(i).Value / (60)
-'                    End If
-'                    If taskTime <> "" Then
-'                        arrTime = arrTime + taskTime
-'                    End If
-'                Next i
-'            Next resAss
-'        End If
-'    Next r
-'    msgbox arrTime
-Perest
-
-End Sub
-
 ' Кнопка импортировать
 Private Sub ImportButton_Click()
 
-  ' Создаем задачи по оценке ЦФТ
+	TimeForSet=Timer
+	'Запись времени в текстовик
+	Call SetTimeForTxt(0,"Начало импорта ",True,False)  
+	' Создаем задачи по оценке ЦФТ
   If Len(Trim(FileNameCFTTextBox.Text)) <> 0 Then
     Call CreateTasksByExcel(TBNumBIQ, CDate(tbStartDate.Value), FileNameCFTTextBox.Text)
-  End If
+	End If
+	
   ' Создаем задачи по оценки БИСквит
   If Len(Trim(FileNameBISTextBox.Text)) <> 0 Then
     Call CreateTasksByExcel(TBNumBIQ, CDate(tbStartDate.Value), FileNameBISTextBox.Text)
-  End If
+	End If
+	'Запись времени в текстовик
+	Call SetTimeForTxt(Timer-TimeForSet,"Конец импорта ",False,True)  
+End Sub
+
+Sub SetTimeForTxt(TimeForSet as single,CallFunc as String,FirstEntry,LastEntry)
+	Dim ff As Integer, ws As Object
+	'Получаем свободный номер для открываемого файла
+	ff = FreeFile
+	'Открываем (или создаем) файл для чтения и записи
+	if FirstEntry=True then
+		Open ThisProject.Path & "\LogTime.txt" For OUTPUT As ff
+		Print #ff, CallFunc
+	else
+		Open ThisProject.Path & "\LogTime.txt" For APPEND As ff
+		Print #ff,CallFunc & TimeForSet
+	end if
+	'Закрываем файл
+	Close ff
+	'Открываем файл для просмотра
+	if LastEntry=True then
+		Set ws = CreateObject("WScript.Shell")
+		ws.Run ThisProject.Path & "\LogTime.txt"
+		Set ws = Nothing
+	end if
 End Sub
 
 ' Инициализация полей
@@ -98,7 +93,9 @@ End Sub
 
 ' Создание задач по оценке
 Sub CreateTasksByExcel(NumBIQ, StartDate, ExcelFileName)
-  
+	
+	'Начинается отсчет времени функции
+	TimeForSet=Timer
   Dim BiqTask As Task ' Для поиска задачи по BIQ
   ' Получаем название полей в MS Project
   InitFieldConst
@@ -177,12 +174,16 @@ Sub CreateTasksByExcel(NumBIQ, StartDate, ExcelFileName)
       
   'Растягиваем даты задач
   Call StretchTasks(IndexTaskFirst, IndexTaskLast)
-    
+	
+  'Запись времени в текстовик
+	Call SetTimeForTxt(Timer-TimeForSet,"  CreateTasksByExcel: ",False,False)  
 End Sub
 
 'функция растягивания задач для устранения перегруза
 Sub ExtendTasks(IndexTaskFirst, IndexTaskLast)
 
+	'Начинается отсчет времени функции
+	TimeForSet=Timer
   Dim BiqTask As Task
   Dim TaskRes As Resource
   Dim resAss  As Assignment
@@ -207,6 +208,8 @@ Sub ExtendTasks(IndexTaskFirst, IndexTaskLast)
       Next resAss
     End If
   Next BiqTask
+	'Запись времени в текстовик
+	Call SetTimeForTxt(Timer-TimeForSet,"  ExtendTasks: ",False,False)  
 
 End Sub
 
@@ -267,6 +270,8 @@ End Function 'GetResAvailability
 'функция замена даты для растяжение задач с типом НН
 Sub StretchTasks(IndexTaskFirst, IndexTaskLast)
 
+	'Начинается отсчет времени функции
+	TimeForSet=Timer
   Dim BiqTaskPred As Task
   Dim BiqTaskDesc As Task
   'Цикл поиска задачи с типом предшественников НН
@@ -307,12 +312,16 @@ Sub StretchTasks(IndexTaskFirst, IndexTaskLast)
       End If
     End If
   Next BiqTaskDesc
+	'Запись времени в текстовик
+	Call SetTimeForTxt(Timer-TimeForSet,"  StretchTasks: ",False,False)
 
 End Sub
 
 'функция назначения исполнителей
 Sub FillResources(TaskGroupCK, FuncArea, TaskTeg, SystemCode, IndexTaskFirst, IndexTaskLast)
-   
+  
+	'Начинается отсчет времени функции
+	TimeForSet=Timer	
   Dim BiqTask As Task
   Dim Ass     As Assignment
   Dim Res     As Resource
@@ -338,6 +347,9 @@ Sub FillResources(TaskGroupCK, FuncArea, TaskTeg, SystemCode, IndexTaskFirst, In
       Next Ass
     End If
   Next BiqTask
+	'Запись времени в текстовик
+	Call SetTimeForTxt(Timer-TimeForSet,"  FillResources: ",False,False) 
+	
 End Sub
 
 'Назначение ресурса на задачу
@@ -362,6 +374,8 @@ End Sub
 'функция заполнения предшественников
 Sub TaskPredInPut(ExcelSheet, BiqStartDate, IndexTaskFirst, IndexTaskLast)
 
+	'Начинается отсчет времени функции
+	TimeForSet=Timer
   i = 8
   Dim BiqTask As Task
   For Each BiqTask In ActiveProject.Tasks
@@ -381,6 +395,8 @@ Sub TaskPredInPut(ExcelSheet, BiqStartDate, IndexTaskFirst, IndexTaskLast)
   Next BiqTask
               'Функция замены предшественников
   Call Zerotasksdel(IndexTaskFirst, IndexTaskLast)
+	'Запись времени в текстовик
+	Call SetTimeForTxt(Timer-TimeForSet,"  TaskPredInPut: ",False,False)  
   
 End Sub
 
@@ -486,6 +502,8 @@ End Function'DelPred
 ' Создание задачи в MS Project
 Sub AddNewTask(MainTask, ByRef FirstTask, BiqStartDate, TaskJiraId, TaskType, TaskName, TaskHours, BiqTaskID, ToTaskDays, TaskTypeITService, TaskTypeWork, TaskActor, ByRef Index, ByRef IndexTaskFirst, ByRef IndexTaskLast)
   
+	'Начинается отсчет времени функции
+	TimeForSet=Timer
   ' Создаем задачу
   If BiqTaskID = 0 Then
     Set NewTask = ActiveProject.Tasks.Add(TaskName)
@@ -528,6 +546,9 @@ Sub AddNewTask(MainTask, ByRef FirstTask, BiqStartDate, TaskJiraId, TaskType, Ta
   NewTask.SetField FieldID:=projectField_JiraProjName, Value:=TaskType
   NewTask.SetField FieldID:=projectField_TypeWork, Value:=TaskTypeWork
   NewTask.SetField FieldID:=projectField_Actor, Value:=TaskActor
+	
+	'Запись времени в текстовик
+	Call SetTimeForTxt(Timer-TimeForSet,"  AddNewTask: ",False,False)  
   
 End Sub
 

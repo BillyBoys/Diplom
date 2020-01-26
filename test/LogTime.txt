@@ -1,0 +1,25 @@
+Начало импорта 
+  AddNewTask: 7,202148E-02
+  AddNewTask: 3,198242E-02
+  AddNewTask: 2,502441E-02
+  AddNewTask: 2,294922E-02
+  AddNewTask: 2,099609E-02
+  AddNewTask: 2,001953E-02
+  AddNewTask: 2,099609E-02
+  AddNewTask: 2,099609E-02
+  AddNewTask: 2,099609E-02
+  AddNewTask: 2,001953E-02
+  AddNewTask: 2,197266E-02
+  AddNewTask: 2,099609E-02
+  AddNewTask: 2,197266E-02
+  AddNewTask: 2,099609E-02
+  AddNewTask: 2,197266E-02
+  AddNewTask: 2,197266E-02
+  AddNewTask: 2,099609E-02
+  AddNewTask: 2,197266E-02
+  TaskPredInPut: 0,1939697
+  FillResources: 0,2009277
+  ExtendTasks: 1,640015
+  StretchTasks: 3,393555E-02
+  CreateTasksByExcel: 3,958008
+Конец импорта 4,001953
