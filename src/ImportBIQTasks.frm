@@ -328,7 +328,7 @@ Sub FillResources(TaskGroupCK, FuncArea, TaskTeg, SystemCode, IndexTaskFirst, In
           If (Res.GetField(FieldID:=projectField_ResGroupCk) = TaskGroupCK) And (TaskTeg = "" Or Res.GetField(FieldID:=projectField_Teg) = TaskTeg) _
           And ((Res.GetField(FieldID:=projectField_FuncArea1) = FuncArea) Or (Res.GetField(FieldID:=projectField_FuncArea2) = FuncArea) Or (Res.GetField(FieldID:=projectField_FuncArea3) = FuncArea)) _
           And ((Res.GetField(FieldID:=projectField_System1) = SystemCode) Or (Res.GetField(FieldID:=projectField_System2) = SystemCode)) _
-          And (Res.GetField(FieldID:=projectField_ResGroup) = TaskActor) Then
+          And (Res.GetField(FieldID:=projectField_ResGroup) = Left(TaskActor,len(TaskActor)-1)) Then
             Percent = Ass.Units
             TaskActorId = Res.id
             Call SetTaskResProcent(BiqTask, TaskActorId, Percent)
@@ -346,7 +346,7 @@ Sub SetTaskResProcent(BiqTask, TaskActorId, Percent)
   'Попытка обновления если ресурс уже есть на задаче
   For Each Ass In BiqTask.Assignments
     If TaskActorId = -1 Or Ass.ResourceID = TaskActorId Then
-      Ass.Units = Percent / 100
+      Ass.Units = Percent
       If TaskActorId <> -1 Then
         Exit Sub
       End If
@@ -355,6 +355,7 @@ Sub SetTaskResProcent(BiqTask, TaskActorId, Percent)
   ' Если не нашли создаем новый
   If TaskActorId <> -1 Then
     BiqTask.Assignments.Add BiqTask.id, TaskActorId, Percent
+		BiqTask.Assignments(BiqTask.Assignments.Count-1 ).Delete
   End If
 End Sub
 
@@ -559,17 +560,17 @@ End Sub
 ' Выбор оценки по ЦФТ
 Private Sub GetExcelFileCFTButton_Click()
   FileNameCFTTextBox.Text = ShowGetOpenDialog()
-	if(TBNumBIQ.Text="") then
+	If(TBNumBIQ.Text="") Then
 		TBNumBIQ.Text=GetBiqNum()
-	end if
+	End If
 End Sub
 
 ' Выбор оценки по БИСквиту
 Private Sub GetExcelFileBISButton_Click()
   FileNameBISTextBox.Text = ShowGetOpenDialog()
-	if(TBNumBIQ.Text="")
+	If(TBNumBIQ.Text="") Then
 		TBNumBIQ.Text=GetBiqNum()
-	end if
+	end If
 End Sub
 
 'Номер оценки из файла
@@ -633,7 +634,7 @@ Private Sub DeleteButton_Click()
   InitFieldConst
   BIQNum = TBNumBIQ 'Номер BIQ-задачи
   BiqTaskID = 0
-	If msgbox("Вы уверены что хотите удалить " & BIQNum & "?",vbYesNo,"Удаление")=vbYes then
+	If msgbox("Вы уверены что хотите удалить " & BIQNum & "?",vbYesNo,"Удаление")=vbYes Then
 		For Each BiqTask In ActiveProject.Tasks
 			If BiqTask.GetField(FieldID:=projectField_JirID) = BIQNum Then
 				BiqTaskID = BiqTask.id
@@ -643,7 +644,7 @@ Private Sub DeleteButton_Click()
 		If BiqTaskID = 0 Then
 			MsgBox ("Такой BIQ-задачи нет")
 		End If
-  End if
+  End If
 	
 End Sub
 
