@@ -1,26 +1,26 @@
 Начало импорта 
-  AddNewTask: 0
-  AddNewTask: 0,0078125
-  AddNewTask: 0,046875
+  AddNewTask: 0,0390625
+  AddNewTask: 0,015625
+  AddNewTask: 0,15625
+  AddNewTask: 0,015625
   AddNewTask: 0,015625
   AddNewTask: 0,0078125
+  AddNewTask: 0,0078125
   AddNewTask: 0,015625
+  AddNewTask: 0,0078125
+  AddNewTask: 0,0234375
+  AddNewTask: 0,015625
+  AddNewTask: 0,0234375
+  AddNewTask: 0,0078125
+  AddNewTask: 0,0234375
   AddNewTask: 0,015625
   AddNewTask: 0,015625
   AddNewTask: 0,0078125
   AddNewTask: 0,0234375
   AddNewTask: 0,0078125
-  AddNewTask: 0,0078125
-  AddNewTask: 0,015625
-  AddNewTask: 0,0078125
-  AddNewTask: 0,0078125
-  AddNewTask: 0,015625
-  AddNewTask: 0,015625
-  AddNewTask: 0,015625
-  AddNewTask: 0,015625
-  TaskPredInPut: 0,140625
-  FillResources: 0,1484375
-  ExtendTasks: 0,8359375
+  TaskPredInPut: 0,1640625
+  FillResources: 0,1875
+  ExtendTasks: 0,8515625
   StretchTasks: 0,0234375
-  CreateTasksByExcel: 3,195313
-Конец импорта 3,203125
+  CreateTasksByExcel: 4,820313
+Конец импорта 4,84375

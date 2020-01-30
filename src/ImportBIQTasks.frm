@@ -104,8 +104,8 @@ End Sub
 Private Sub UserForm_Initialize()
   tbStartDate = Format(Date, "dd/mm/yyyy")
   TBNumBIQ = "BIQ-5257"
-  'FileNameCFTTextBox = "C:\Users\Эрнест\Documents\GitHub\Diplom\test\Расшифровка ЭО BIQ5257.xlsx"
-  FileNameCFTTextBox = "d:\info\Эрнест\Diplom\test\Расшифровка ЭО BIQ5257.xlsx"
+  FileNameCFTTextBox = "C:\Users\Эрнест\Documents\GitHub\Diplom\test\Расшифровка ЭО BIQ5257.xlsx"
+  'FileNameCFTTextBox = "d:\info\Эрнест\Diplom\test\Расшифровка ЭО BIQ5257.xlsx"
   TBNumBIQFDelete = 5257
 End Sub
 
@@ -397,7 +397,9 @@ Sub SetTaskResProcent(BiqTask, TaskActorId, Percent)
   ' Если не нашли создаем новый
   If TaskActorId <> -1 Then
     BiqTask.Assignments.Add BiqTask.id, TaskActorId, Percent
-    BiqTask.Assignments(BiqTask.Assignments.Count - 1).Delete
+    If BiqTask.Assignments.Count - 1 > 0 Then
+      BiqTask.Assignments(BiqTask.Assignments.Count - 1).Delete
+    End If
   End If
 End Sub
 
@@ -431,7 +433,6 @@ End Sub
 
 'Функция замены у потомков
 Sub Zerotasksdel(IndexTaskFirst, IndexTaskLast)
-          
   Dim BiqTask As Task
   Dim BiqTaskSecond As Task
   TempZeroTaskID = 0
@@ -453,7 +454,6 @@ End Sub
 
 'Функция замены у потомков 2
 Sub RepCycPred(TempZeroTaskID, TempPredec)
-
   Dim BiqTask As Task
   For Each BiqTask In ActiveProject.Tasks 'Цикл замены у потомков
     TempDesc = BiqTask.GetField(FieldID:=projectField_Predecessors)
@@ -488,7 +488,6 @@ End Sub
 
 'функция изменения сложных предшественников
 Public Function DelPred(TaskPredecessors, IndexTaskFirst, IndexTaskLast) As String
-
   Delim = InStr(1, TaskPredecessors, ";")
   NewPredecessors = ""
   Do While Delim
@@ -530,7 +529,6 @@ End Function 'DelPred
 
 ' Создание задачи в MS Project
 Sub AddNewTask(MainTask, ByRef FirstTask, BiqStartDate, TaskJiraId, TaskType, TaskName, TaskHours, BiqTaskID, ToTaskDays, TaskTypeITService, TaskTypeWork, TaskActor, ByRef Index, ByRef IndexTaskFirst, ByRef IndexTaskLast)
-  
   'Начинается отсчет времени функции
   TimeForSet = Timer
   ' Создаем задачу
