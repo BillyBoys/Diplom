@@ -611,7 +611,7 @@ End Sub
 Private Sub GetExcelFileCFTButton_Click()
   FileNameCFTTextBox.Text = ShowGetOpenDialog()
   If (TBNumBIQ.Text = "") Then
-    TBNumBIQ.Text = GetBiqNum()
+    TBNumBIQ.Text = GetBiqNum(FileNameCFTTextBox.Text )
   End If
 End Sub
 
@@ -619,13 +619,13 @@ End Sub
 Private Sub GetExcelFileBISButton_Click()
   FileNameBISTextBox.Text = ShowGetOpenDialog()
     If (TBNumBIQ.Text = "") Then
-      TBNumBIQ.Text = GetBiqNum()
+      TBNumBIQ.Text = GetBiqNum(FileNameBISTextBox.Text)
     End If
 End Sub
 
 'Номер оценки из файла
-Public Function GetBiqNum() As String
-  PathToExc = FileNameCFTTextBox.Text
+Public Function GetBiqNum(FileExcelName) As String
+  PathToExc = FileExcelName
   Set xlobject = CreateObject("Excel.Application")
   xlobject.Workbooks.Open PathToExc
   ' Если не удалось открыть, то выходим
