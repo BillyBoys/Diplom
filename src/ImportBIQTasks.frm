@@ -49,54 +49,61 @@ Private Sub ImportButton_Click()
   Call SetTimeForTxt(0, "Начало импорта ", True, False)
   ' Создаем задачи по оценке ЦФТ
   If Len(Trim(FileNameCFTTextBox.Text)) <> 0 Then
-    Call CreateTasksByExcel(TBNumBIQ, CDate(tbStartDate.Value), FileNameCFTTextBox.Text)
+    If CreateTasksByExcel(TBNumBIQ, CDate(tbStartDate.Value), FileNameCFTTextBox.Text)=False Then
+      Msgbox "Задача с такой система уже была созадана"
+      Exit Sub
+    End If
   End If
         
   ' Создаем задачи по оценки БИСквит
   If Len(Trim(FileNameBISTextBox.Text)) <> 0 Then
-    Call CreateTasksByExcel(TBNumBIQ, CDate(tbStartDate.Value), FileNameBISTextBox.Text)
+    If CreateTasksByExcel(TBNumBIQ, CDate(tbStartDate.Value), FileNameBISTextBox.Text)=False Then
+      Msgbox "Задача с такой система уже была созадана"
+      Exit Sub
+    End If
   End If
   'Запись времени в текстовик
   Call SetTimeForTxt(Timer - TimeForSet, "Конец импорта ", False, True)
   
   'Запись протокола работы
   Call SetProtocolJob("Импорт")
+  
 End Sub
 
 'Запись протокола работы
 Sub SetProtocolJob(CallFunc)
-  Dim ff As Integer, ws As Object
+  Dim FileText As Integer
   'Получаем свободный номер для открываемого файла
-  ff = FreeFile
+  FileText = FreeFile
   'Открываем (или создаем) файл для чтения и записи
-  Open ThisProject.Path & "\ProtocolJob.txt" For Append As ff
-  Print #ff, CallFunc & " " & TBNumBIQ 
+  Open ThisProject.Path & "\ProtocolJob.txt" For Append As FileText
+  Print #FileText, CallFunc & " " & TBNumBIQ 
   'Закрываем файл
-  Close ff
+  Close FileText
 
 End Sub
 
 'Запись времени
 Sub SetTimeForTxt(TimeForSet As Single, CallFunc As String, FirstEntry, LastEntry)
-  Dim ff As Integer, ws As Object
+  Dim FileText As Integer, ObjForOpen As Object
   'Получаем свободный номер для открываемого файла
-  ff = FreeFile
+  FileText = FreeFile
   'Открываем (или создаем) файл для перезаписи или дозаписи
   If FirstEntry = True Then
-    Open ThisProject.Path & "\LogTime.txt" For Output As ff
-    Print #ff, CallFunc
+    Open ThisProject.Path & "\LogTime.txt" For Output As FileText
+    Print #FileText, CallFunc
   Else
-    Open ThisProject.Path & "\LogTime.txt" For Append As ff
-    Print #ff, CallFunc & TimeForSet
+    Open ThisProject.Path & "\LogTime.txt" For Append As FileText
+    Print #FileText, CallFunc & TimeForSet
   End If
   'Закрываем файл
-  Close ff
-  'Открываем файл для просмотра
-  If LastEntry = True Then
-    Set ws = CreateObject("WScript.Shell")
-    ws.Run ThisProject.Path & "\LogTime.txt"
-    Set ws = Nothing
-  End If
+  Close FileText
+'  'Открываем файл для просмотра
+'  If LastEntry = True Then
+'    Set ObjForOpen = CreateObject("WScript.Shell")
+'    ObjForOpen.Run ThisProject.Path & "\LogTime.txt"
+'    Set ObjForOpen = Nothing
+'  End If
   
 End Sub
 
@@ -107,10 +114,11 @@ Private Sub UserForm_Initialize()
   FileNameCFTTextBox = "C:\Users\Эрнест\Documents\GitHub\Diplom\test\Расшифровка ЭО BIQ5257.xlsx"
   'FileNameCFTTextBox = "d:\info\Эрнест\Diplom\test\Расшифровка ЭО BIQ5257.xlsx"
   TBNumBIQFDelete = 5257
+  
 End Sub
 
 ' Создание задач по оценке
-Sub CreateTasksByExcel(NumBIQ, StartDate, ExcelFileName)
+Public Function CreateTasksByExcel(NumBIQ, StartDate, ExcelFileName) as Boolean
         
   'Начинается отсчет времени функции
   TimeForSet = Timer
@@ -125,7 +133,7 @@ Sub CreateTasksByExcel(NumBIQ, StartDate, ExcelFileName)
   ' Если не удалось открыть, то выходим
   If xlobject.ActiveWorkbook Is Nothing Then
     xlobject.Quit 'Закрытие Excel файла
-    Exit Sub
+    Exit Function
   End If
   
   'Интересует 4 лист оценки - технический лист для данного функционала
@@ -158,6 +166,11 @@ Sub CreateTasksByExcel(NumBIQ, StartDate, ExcelFileName)
     FirstTask = True
     Call AddNewTask(False, FirstTask, StartDate, "", TaskType, BIQName, "", BiqTaskID, False, ITService, "", "", Index, IndexTaskFirst, IndexTaskLast)
   Else
+    If SearchIdentBIQ(TaskType) = True Then
+      xlobject.Quit 'Закрытие Excel файла
+      CreateTasksByExcel=False
+      Exit Function
+    End If
     'Создаем подзадачу для системы
     FirstTask = False
     Call AddNewTask(False, FirstTask, StartDate, "", TaskType, BIQName, "", BiqTaskID, False, ITService, "", "", Index, IndexTaskFirst, IndexTaskLast)
@@ -198,7 +211,22 @@ Sub CreateTasksByExcel(NumBIQ, StartDate, ExcelFileName)
   
   'Запись времени в текстовик
   Call SetTimeForTxt(Timer - TimeForSet, "  CreateTasksByExcel: ", False, False)
-End Sub
+  CreateTasksByExcel=True
+  
+End Function
+
+'Поиск задачи второго уровня с одиннаковой системой
+Public Function SearchIdentBIQ(SystemCode) as Boolean
+  Dim BiqTask As Task
+  For Each BiqTask In ActiveProject.Tasks
+    If BiqTask.GetField(FieldID:=projectField_JiraProjName)=SystemCode then
+      SearchIdentBIQ=True
+      Exit Function
+    End if
+  Next BiqTask
+  SearchIdentBIQ=False
+  
+End Function'SearchIdentBIQ
 
 'запись даты завершения
 Sub TaskDateEnd(IndexTaskFirst, IndexTaskLast)
@@ -212,6 +240,7 @@ Sub TaskDateEnd(IndexTaskFirst, IndexTaskLast)
     End if
   Next BiqTask
   tbEndDate.Text=ForDate
+  
 End Sub
 
 'функция растягивания задач для устранения перегруза
