@@ -1,0 +1,27 @@
+ImportButton_Click          'Кнопка импортировать
+SetProtocolJob              'Запись протокола работы
+SetTimeForTxt               'Запись времени
+UserForm_Initialize         'Инициализация полей
+CreateTasksByExcel          'Основная функция 
+SearchIdentBIQ              'Поиск задачи второго уровня с одиннаковой системой
+TaskDateEnd                 'запись даты завершения
+ExtendTasks                 'функция растягивания задач для устранения перегруза
+GetResLoadTask              'функция получения часов в день запланированных на ресурсе
+GetResLoad                  'функция получения часов в день запланированных на ресурсе
+GetResAvailability          'функция получения доступности 0..1
+StretchTasks                'функция замена даты для растяжение задач с типом НН
+FillResources               'функция назначения исполнителей
+SetTaskResProcent           'Назначение ресурса на задачу
+TaskPredInPut               'функция заполнения предшественников
+Zerotasksdel                'Функция замены у потомков
+RepCycPred                  'Функция замены у потомков 2
+DelPred                     'функция изменения сложных предшественников
+AddNewTask                  'Создание задачи в MS Project
+InitFieldConst              'Получаем название полей в MS Project
+GetExcelFileCFTButton_Click 'Выбор оценки по ЦФТ
+GetExcelFileBISButton_Click 'Выбор оценки по БИСквиту
+GetBiqNum                   'Номер оценки из файла
+ShowGetOpenDialog           'Функция открытия проводника для выбора файла
+DeleteAllZeroTasks          'Удаление всех задач с нулем часов
+DeleteButton_Click          'Кнопка удаления
+Perest                      'Растягивание задачи в зависимости от загрузки ресурсов
