@@ -50,7 +50,7 @@ Private Sub ImportButton_Click()
   ' Создаем задачи по оценке ЦФТ
   If Len(Trim(FileNameCFTTextBox.Text)) <> 0 Then
     If CreateTasksByExcel(TBNumBIQ, CDate(tbStartDate.Value), FileNameCFTTextBox.Text)=False Then
-      Msgbox "Задача с такой система уже была созадана"
+      Msgbox "Задача с такой система уже была создана"
       Exit Sub
     End If
   End If
@@ -58,7 +58,7 @@ Private Sub ImportButton_Click()
   ' Создаем задачи по оценки БИСквит
   If Len(Trim(FileNameBISTextBox.Text)) <> 0 Then
     If CreateTasksByExcel(TBNumBIQ, CDate(tbStartDate.Value), FileNameBISTextBox.Text)=False Then
-      Msgbox "Задача с такой система уже была созадана"
+      Msgbox "Задача с такой система уже была создана"
       Exit Sub
     End If
   End If
@@ -111,26 +111,25 @@ End Sub
 Private Sub UserForm_Initialize()
   tbStartDate = Format(Date, "dd/mm/yyyy")
   TBNumBIQ = "BIQ-5257"
-  'FileNameCFTTextBox = "C:\Users\Эрнест\Documents\GitHub\Diplom\test\Расшифровка ЭО BIQ5257.xlsx"
-  FileNameCFTTextBox = "d:\info\Эрнест\Diplom\test\Расшифровка ЭО BIQ5257.xlsx"
+  FileNameCFTTextBox = "C:\Users\Эрнест\Documents\GitHub\Diplom\test\Расшифровка ЭО BIQ5257.xlsx"
+  'FileNameCFTTextBox = "d:\info\Эрнест\Diplom\test\Расшифровка ЭО BIQ5257.xlsx"
   TBNumBIQFDelete = 5257
   
 End Sub
 
 ' Создание задач по оценке
 Public Function CreateTasksByExcel(NumBIQ, StartDate, ExcelFileName) as Boolean
-        
   'Начинается отсчет времени функции
   TimeForSet = Timer
   Dim BiqTask As Task ' Для поиска задачи по BIQ
-  ' Получаем название полей в MS Project
+  'Получаем название полей в MS Project
   InitFieldConst
-  ' Открываем оценку для чтения этапов разработки
+  'Открываем оценку для чтения этапов разработки
   PathToExc = ExcelFileName
   Set xlobject = CreateObject("Excel.Application")
   xlobject.Workbooks.Open PathToExc
               
-  ' Если не удалось открыть, то выходим
+  'Если не удалось открыть, то выходим
   If xlobject.ActiveWorkbook Is Nothing Then
     xlobject.Quit 'Закрытие Excel файла
     Exit Function
@@ -155,9 +154,16 @@ Public Function CreateTasksByExcel(NumBIQ, StartDate, ExcelFileName) as Boolean
       BiqTaskID = BiqTask.id
     End If
   Next BiqTask
-
+  'Поиск задачи с одиннаковой системой
+  If SearchIdentBIQ(TaskType) = True Then
+    xlobject.Quit 'Закрытие Excel файла
+    CreateTasksByExcel=False
+    Exit Function
+  Else
+    BiqTaskID = 0
+  End If
   Index = 1
-  ' Если не нашли главную задачу
+  'Если не нашли главную задачу
   If BiqTaskID = 0 Then
     'Создаем главную задачу по BIQ
     FirstTask = False
@@ -166,11 +172,6 @@ Public Function CreateTasksByExcel(NumBIQ, StartDate, ExcelFileName) as Boolean
     FirstTask = True
     Call AddNewTask(False, FirstTask, StartDate, "", TaskType, BIQName, "", BiqTaskID, False, ITService, "", "", Index, IndexTaskFirst, IndexTaskLast)
   Else
-    If SearchIdentBIQ(TaskType) = True Then
-      xlobject.Quit 'Закрытие Excel файла
-      CreateTasksByExcel=False
-      Exit Function
-    End If
     'Создаем подзадачу для системы
     FirstTask = False
     Call AddNewTask(False, FirstTask, StartDate, "", TaskType, BIQName, "", BiqTaskID, False, ITService, "", "", Index, IndexTaskFirst, IndexTaskLast)
@@ -219,7 +220,7 @@ End Function
 Public Function SearchIdentBIQ(SystemCode) as Boolean
   Dim BiqTask As Task
   For Each BiqTask In ActiveProject.Tasks
-    If BiqTask.GetField(FieldID:=projectField_JiraProjName)=SystemCode then
+    If BiqTask.GetField(FieldID:=projectField_JiraProjName)=SystemCode  Then
       SearchIdentBIQ=True
       Exit Function
     End if
