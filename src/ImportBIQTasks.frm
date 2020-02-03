@@ -243,7 +243,7 @@ Sub TaskDateEnd(IndexTaskFirst, IndexTaskLast)
   
 End Sub
 
-'функция растягивания задач для устранения перегруза
+'процедура растягивания задач для устранения перегруза
 Sub ExtendTasks(IndexTaskFirst, IndexTaskLast)
   'Начинается отсчет времени функции
   TimeForSet = Timer
@@ -317,7 +317,6 @@ End Function 'GetResLoad
 Public Function GetResAvailability(CheckDate, CheckRes) As Single
   Dim TaskAvailabity As Availability
   ResAvailability = 0
-  
   For Each TaskAvailabity In CheckRes.Availabilities
     If TaskAvailabity.AvailableFrom < CheckDate And CheckDate < TaskAvailabity.AvailableTo Then
       ResAvailability = ResAvailability + TaskAvailabity.AvailableUnit
@@ -327,7 +326,7 @@ Public Function GetResAvailability(CheckDate, CheckRes) As Single
   
 End Function 'GetResAvailability
 
-'функция замена даты для растяжение задач с типом НН
+'процедура замена даты для растяжение задач с типом НН
 Sub StretchTasks(IndexTaskFirst, IndexTaskLast)
   'Начинается отсчет времени функции
   TimeForSet = Timer
@@ -377,7 +376,7 @@ Sub StretchTasks(IndexTaskFirst, IndexTaskLast)
 
 End Sub
 
-'функция назначения исполнителей
+'процедура назначения исполнителей
 Sub FillResources(TaskGroupCK, FuncArea, TaskTeg, SystemCode, IndexTaskFirst, IndexTaskLast)
   'Начинается отсчет времени функции
   TimeForSet = Timer
@@ -460,7 +459,7 @@ Sub TaskPredInPut(ExcelSheet, BiqStartDate, IndexTaskFirst, IndexTaskLast)
   
 End Sub
 
-'Функция замены у потомков
+'Процедура замены у потомков
 Sub Zerotasksdel(IndexTaskFirst, IndexTaskLast)
   Dim BiqTask As Task
   Dim BiqTaskSecond As Task
@@ -669,7 +668,6 @@ End Function 'GetBiqNum
 
 'Функция открытия проводника для выбора файла
 Public Function ShowGetOpenDialog() As String
-
   Dim xlObj As Excel.Application
   Dim fd As Office.FileDialog
   Set xlObj = New Excel.Application
@@ -691,7 +689,6 @@ End Function 'ShowGetOpenDialog
 
 'Удаление всех задач с нулем часов
 Sub DeleteAllZeroTasks(IndexTaskFirst, IndexTaskLast)
-
   Dim BiqTask As Task
   For Each BiqTask In ActiveProject.Tasks
     If BiqTask.GetField(FieldID:=projectField_Cost) = "0 ч" Then
@@ -706,7 +703,6 @@ End Sub
 
 'Кнопка удаления
 Private Sub DeleteButton_Click()
-
   Dim BiqTask As Task ' Для поиска задачи по BIQ
   InitFieldConst
   BIQNum = TBNumBIQ 'Номер BIQ-задачи
@@ -725,6 +721,7 @@ Private Sub DeleteButton_Click()
   End If
   'Запись протокола работы
   Call SetProtocolJob("Удаление")
+  
 End Sub
 
 ' Растягивание задачи в зависимости от загрузки ресурсов
