@@ -156,9 +156,11 @@ Public Function CreateTasksByExcel(NumBIQ, StartDate, ExcelFileName) as Boolean
   Next BiqTask
   'Поиск задачи с одиннаковой системой
   If SearchIdentBIQ(TaskType) = True Then
-    xlobject.Quit 'Закрытие Excel файла
-    CreateTasksByExcel=False
-    Exit Function
+    If MsgBox("Такая задача уже есть в системе, продолжить добавление?", vbYesNo, "Добавление") = vbNo Then
+      xlobject.Quit 'Закрытие Excel файла
+      CreateTasksByExcel=False
+      Exit Function
+    End If
   Else
     BiqTaskID = 0
   End If
@@ -226,7 +228,7 @@ Public Function SearchIdentBIQ(SystemCode) as Boolean
     End if
   Next BiqTask
   SearchIdentBIQ=False
-  
+
 End Function'SearchIdentBIQ
 
 'запись даты завершения
@@ -708,17 +710,17 @@ Private Sub DeleteButton_Click()
   InitFieldConst
   BIQNum = TBNumBIQ 'Номер BIQ-задачи
   BiqTaskID = 0
-    If MsgBox("Вы уверены что хотите удалить " & BIQNum & "?", vbYesNo, "Удаление") = vbYes Then
-      For Each BiqTask In ActiveProject.Tasks
-        If BiqTask.GetField(FieldID:=projectField_JirID) = BIQNum Then
-          BiqTaskID = BiqTask.id
-          BiqTask.Delete 'Удаление BIQ-задачи
-        End If
-      Next BiqTask
-      If BiqTaskID = 0 Then
-        MsgBox ("Такой BIQ-задачи нет")
-        Exit Sub
-      End If  
+  If MsgBox("Вы уверены что хотите удалить " & BIQNum & "?", vbYesNo, "Удаление") = vbYes Then
+    For Each BiqTask In ActiveProject.Tasks
+      If BiqTask.GetField(FieldID:=projectField_JirID) = BIQNum Then
+        BiqTaskID = BiqTask.id
+        BiqTask.Delete 'Удаление BIQ-задачи
+      End If
+    Next BiqTask
+    If BiqTaskID = 0 Then
+      MsgBox ("Такой BIQ-задачи нет")
+      Exit Sub
+    End If
   End If
   'Запись протокола работы
   Call SetProtocolJob("Удаление")
