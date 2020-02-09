@@ -204,13 +204,13 @@ Public Function CreateTasksByExcel(NumBIQ, StartDate, ExcelFileName) as Boolean
   Call FillResources(TaskGroupCK, FuncArea, TaskTeg, SystemCode, IndexTaskFirst, IndexTaskLast)
   
   'Растягивание задач для устранения перегруза
-  Call ExtendTasks(IndexTaskFirst, IndexTaskLast)
+  'Call ExtendTasks(IndexTaskFirst, IndexTaskLast)
       
   'Растягиваем даты задач
-  Call StretchTasks(IndexTaskFirst, IndexTaskLast)
+  'Call StretchTasks(IndexTaskFirst, IndexTaskLast)
   
   'Дата завершения
-  Call TaskDateEnd (IndexTaskFirst, IndexTaskLast)
+  'Call TaskDateEnd (IndexTaskFirst, IndexTaskLast)
   
   'Запись времени в текстовик
   Call SetTimeForTxt(Timer - TimeForSet, "  CreateTasksByExcel: ", False, False)
@@ -389,29 +389,57 @@ Sub FillResources(TaskGroupCK, FuncArea, TaskTeg, SystemCode, IndexTaskFirst, In
   'Бежим по всем задачам требуеющих поиска исполнителей
   For Each BiqTask In ActiveProject.Tasks
     If (BiqTask.id >= IndexTaskFirst And BiqTask.id <= IndexTaskLast) Then
-      ' Бежим по всем необходимым ресурсам
+      NumMainTask = DefinMainTaskForRes(IndexTaskFirst,IndexTaskLast,BiqTask.Assignments(1).ResourceName)
+      'Бежим по всем необходимым ресурсам
       For Each Ass In BiqTask.Assignments
         'Получаем группу ресурсов
         TaskActor = Ass.ResourceName
         'Бежим по всем досутпным ресурсам - ищем исполнителя
         For Each Res In ActiveProject.Resources
-          If (Res.GetField(FieldID:=projectField_ResGroupCk) = TaskGroupCK) And (TaskTeg = "" Or Res.GetField(FieldID:=projectField_Teg) = TaskTeg) _
-          And ((Res.GetField(FieldID:=projectField_FuncArea1) = FuncArea) Or (Res.GetField(FieldID:=projectField_FuncArea2) = FuncArea) Or (Res.GetField(FieldID:=projectField_FuncArea3) = FuncArea)) _
-          And ((Res.GetField(FieldID:=projectField_System1) = SystemCode) Or (Res.GetField(FieldID:=projectField_System2) = SystemCode)) _
-          And (Res.GetField(FieldID:=projectField_ResGroup) = Left(TaskActor, Len(TaskActor) - 1)) Then
-            Percent = Ass.Units
-            TaskActorId = Res.id
-            Call SetTaskResProcent(BiqTask, TaskActorId, Percent)
-            Exit For
+          'Условия жесткие
+          If ((Res.GetField(FieldID:=projectField_System1) = SystemCode) Or (Res.GetField(FieldID:=projectField_System2) = SystemCode)) Then
+            'Условия мягкие
+            If (Res.GetField(FieldID:=projectField_ResGroupCk) = TaskGroupCK) And (TaskTeg = "" Or Res.GetField(FieldID:=projectField_Teg) = TaskTeg) _
+            And ((Res.GetField(FieldID:=projectField_FuncArea1) = FuncArea) Or (Res.GetField(FieldID:=projectField_FuncArea2) = FuncArea) Or (Res.GetField(FieldID:=projectField_FuncArea3) = FuncArea)) _
+            And (Res.GetField(FieldID:=projectField_ResGroup) = Left(TaskActor, Len(TaskActor) - 1)) Then
+              Percent = Ass.Units
+              TaskActorId = Res.id
+              Call SetTaskResProcent(BiqTask, TaskActorId, Percent)
+              Exit For
+            End If
           End If
         Next Res
       Next Ass
     End If
   Next BiqTask
   'Запись времени в текстовик
-  Call SetTimeForTxt(Timer - TimeForSet, "  FillResources: ", False, False)
+  Call SetTimeForTxt(Timer - TimeForSet,"  FillResources: ", False, False)
         
 End Sub
+
+'Функция поиска основной задачи
+Public Function DefinMainTaskForRes(IndexTaskFirst,IndexTaskLast,TaskActor) As Long
+  TimeForSet = Timer
+  Dim BiqTask As Task
+  FindProcent=0
+  'Проверка на количество задач,если одна то основная
+  If IndexTaskFirst = IndexTaskLast Then 
+    DefinMainTaskForRes=IndexTaskFirst
+    Exit Function
+  End If
+  'Поиск задачи с наибольшим процентом
+  For Each BiqTask In ActiveProject.Tasks
+    If (BiqTask.id >= IndexTaskFirst And BiqTask.id <= IndexTaskLast) Then
+      If (BiqTask.Assignments(1).ResourceName = TaskActor And BiqTask.Assignments(1).Units > FindProcent) Then
+        FindProcent = BiqTask.Assignments(1).Units
+        NumberBiq = BiqTask.Id
+      End If
+    End If
+  Next BiqTask
+  DefinMainTaskForRes = NumberBiq
+  Call SetTimeForTxt(Timer - TimeForSet,"  DefinMainTaskForRes: ", False, False)
+    
+End Function'DefinMainTaskForRes
 
 'Назначение ресурса на задачу
 Sub SetTaskResProcent(BiqTask, TaskActorId, Percent)
