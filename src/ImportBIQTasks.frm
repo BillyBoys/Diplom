@@ -1,7 +1,7 @@
 VERSION 5.00
 Begin {C62A69F0-16DC-11CE-9E98-00AA00574A4F} ImportBIQTasks 
    Caption         =   "Перенос BIQ задач "
-   ClientHeight    =   5145
+   ClientHeight    =   5415
    ClientLeft      =   120
    ClientTop       =   465
    ClientWidth     =   8325.001
@@ -13,6 +13,7 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
+
 
 
 
@@ -41,7 +42,8 @@ Dim projectField_FuncArea2    As Long
 Dim projectField_FuncArea3    As Long
 Dim projectField_System1      As Long
 Dim projectField_System2      As Long
-
+Dim projectField_ImpDate      As Long
+Dim projectField_EmpImpTask   As Long
 ' Кнопка импортировать
 Private Sub ImportButton_Click()
   TimeForSet = Timer
@@ -49,16 +51,16 @@ Private Sub ImportButton_Click()
   Call SetTimeForTxt(0, "Начало импорта ", True, False)
   ' Создаем задачи по оценке ЦФТ
   If Len(Trim(FileNameCFTTextBox.Text)) <> 0 Then
-    If CreateTasksByExcel(TBNumBIQ, CDate(tbStartDate.Value), FileNameCFTTextBox.Text)=False Then
-      Msgbox "Задача с такой система уже была создана"
+    If CreateTasksByExcel(TBNumBIQ, CDate(tbStartDate.Value), FileNameCFTTextBox.Text) = False Then
+      MsgBox "Задача с такой система уже была создана"
       Exit Sub
     End If
   End If
-        
+
   ' Создаем задачи по оценки БИСквит
   If Len(Trim(FileNameBISTextBox.Text)) <> 0 Then
-    If CreateTasksByExcel(TBNumBIQ, CDate(tbStartDate.Value), FileNameBISTextBox.Text)=False Then
-      Msgbox "Задача с такой система уже была создана"
+    If CreateTasksByExcel(TBNumBIQ, CDate(tbStartDate.Value), FileNameBISTextBox.Text) = False Then
+      MsgBox "Задача с такой система уже была создана"
       Exit Sub
     End If
   End If
@@ -77,7 +79,7 @@ Sub SetProtocolJob(CallFunc)
   FileText = FreeFile
   'Открываем (или создаем) файл для чтения и записи
   Open ThisProject.Path & "\ProtocolJob.txt" For Append As FileText
-  Print #FileText, CallFunc & " " & TBNumBIQ 
+  Print #FileText, CallFunc & " " & TBNumBIQ
   'Закрываем файл
   Close FileText
 
@@ -110,15 +112,17 @@ End Sub
 ' Инициализация полей
 Private Sub UserForm_Initialize()
   tbStartDate = Format(Date, "dd/mm/yyyy")
+  tbImpDate = Format(Date, "dd/mm/yyyy")
+  Employee = 129
   TBNumBIQ = "BIQ-5257"
-  FileNameCFTTextBox = "C:\Users\Эрнест\Documents\GitHub\Diplom\test\Расшифровка ЭО BIQ5257.xlsx"
-  'FileNameCFTTextBox = "d:\info\Эрнест\Diplom\test\Расшифровка ЭО BIQ5257.xlsx"
+  'FileNameCFTTextBox = "C:\Users\Эрнест\Documents\GitHub\Diplom\test\Расшифровка ЭО BIQ5257.xlsx"
+  FileNameCFTTextBox = "d:\info\Эрнест\Diplom\test\Расшифровка ЭО BIQ5257.xlsx"
   TBNumBIQFDelete = 5257
   
 End Sub
 
 ' Создание задач по оценке
-Public Function CreateTasksByExcel(NumBIQ, StartDate, ExcelFileName) as Boolean
+Public Function CreateTasksByExcel(NumBIQ, StartDate, ExcelFileName) As Boolean
   'Начинается отсчет времени функции
   TimeForSet = Timer
   Dim BiqTask As Task ' Для поиска задачи по BIQ
@@ -128,7 +132,7 @@ Public Function CreateTasksByExcel(NumBIQ, StartDate, ExcelFileName) as Boolean
   PathToExc = ExcelFileName
   Set xlobject = CreateObject("Excel.Application")
   xlobject.Workbooks.Open PathToExc
-              
+
   'Если не удалось открыть, то выходим
   If xlobject.ActiveWorkbook Is Nothing Then
     xlobject.Quit 'Закрытие Excel файла
@@ -158,7 +162,7 @@ Public Function CreateTasksByExcel(NumBIQ, StartDate, ExcelFileName) as Boolean
   If SearchIdentBIQ(TaskType) = True Then
     If MsgBox("Такая задача уже есть в системе, продолжить добавление?", vbYesNo, "Добавление") = vbNo Then
       xlobject.Quit 'Закрытие Excel файла
-      CreateTasksByExcel=False
+      CreateTasksByExcel = False
       Exit Function
     End If
   Else
@@ -204,32 +208,32 @@ Public Function CreateTasksByExcel(NumBIQ, StartDate, ExcelFileName) as Boolean
   Call FillResources(TaskGroupCK, FuncArea, TaskTeg, SystemCode, IndexTaskFirst, IndexTaskLast)
   
   'Растягивание задач для устранения перегруза
-  'Call ExtendTasks(IndexTaskFirst, IndexTaskLast)
-      
+  Call ExtendTasks(IndexTaskFirst, IndexTaskLast)
+
   'Растягиваем даты задач
-  'Call StretchTasks(IndexTaskFirst, IndexTaskLast)
+  Call StretchTasks(IndexTaskFirst, IndexTaskLast)
   
   'Дата завершения
-  'Call TaskDateEnd (IndexTaskFirst, IndexTaskLast)
+  Call TaskDateEnd (IndexTaskFirst, IndexTaskLast)
   
   'Запись времени в текстовик
   Call SetTimeForTxt(Timer - TimeForSet, "  CreateTasksByExcel: ", False, False)
-  CreateTasksByExcel=True
+  CreateTasksByExcel = True
   
 End Function
 
 'Поиск задачи второго уровня с одиннаковой системой
-Public Function SearchIdentBIQ(SystemCode) as Boolean
+Public Function SearchIdentBIQ(SystemCode) As Boolean
   Dim BiqTask As Task
   For Each BiqTask In ActiveProject.Tasks
-    If BiqTask.GetField(FieldID:=projectField_JiraProjName)=SystemCode  Then
-      SearchIdentBIQ=True
+    If BiqTask.GetField(FieldID:=projectField_JiraProjName) = SystemCode Then
+      SearchIdentBIQ = True
       Exit Function
-    End if
+    End If
   Next BiqTask
-  SearchIdentBIQ=False
+  SearchIdentBIQ = False
 
-End Function'SearchIdentBIQ
+End Function 'SearchIdentBIQ
 
 'запись даты завершения
 Sub TaskDateEnd(IndexTaskFirst, IndexTaskLast)
@@ -237,12 +241,12 @@ Sub TaskDateEnd(IndexTaskFirst, IndexTaskLast)
   Dim ForDate As Date
   For Each BiqTask In ActiveProject.Tasks
     If (BiqTask.id >= IndexTaskFirst And BiqTask.id <= IndexTaskLast) Then
-      If(BiqTask.Finish>ForDate or BiqTask.id = IndexTaskFirst) then
-        ForDate=BiqTask.Finish
-      End if
-    End if
+      If (BiqTask.Finish > ForDate Or BiqTask.id = IndexTaskFirst) Then
+        ForDate = BiqTask.Finish
+      End If
+    End If
   Next BiqTask
-  tbEndDate.Text=ForDate
+  tbEndDate.Text = ForDate
   
 End Sub
 
@@ -389,7 +393,7 @@ Sub FillResources(TaskGroupCK, FuncArea, TaskTeg, SystemCode, IndexTaskFirst, In
   'Бежим по всем задачам требуеющих поиска исполнителей
   For Each BiqTask In ActiveProject.Tasks
     If (BiqTask.id >= IndexTaskFirst And BiqTask.id <= IndexTaskLast) Then
-      NumMainTask = DefinMainTaskForRes(IndexTaskFirst,IndexTaskLast,BiqTask.Assignments(1).ResourceName)
+      NumMainTask = DefinMainTaskForRes(IndexTaskFirst, IndexTaskLast, BiqTask.Assignments(1).ResourceName)
       'Бежим по всем необходимым ресурсам
       For Each Ass In BiqTask.Assignments
         'Получаем группу ресурсов
@@ -413,33 +417,26 @@ Sub FillResources(TaskGroupCK, FuncArea, TaskTeg, SystemCode, IndexTaskFirst, In
     End If
   Next BiqTask
   'Запись времени в текстовик
-  Call SetTimeForTxt(Timer - TimeForSet,"  FillResources: ", False, False)
+  Call SetTimeForTxt(Timer - TimeForSet, "  FillResources: ", False, False)
         
 End Sub
 
-'Функция поиска основной задачи
-Public Function DefinMainTaskForRes(IndexTaskFirst,IndexTaskLast,TaskActor) As Long
+Public Function DefinMainTaskForRes(IndexTaskFirst, IndexTaskLast, TaskActor) As Long
   TimeForSet = Timer
   Dim BiqTask As Task
-  FindProcent=0
-  'Проверка на количество задач,если одна то основная
-  If IndexTaskFirst = IndexTaskLast Then 
-    DefinMainTaskForRes=IndexTaskFirst
-    Exit Function
-  End If
-  'Поиск задачи с наибольшим процентом
+  FindProcent = 0
   For Each BiqTask In ActiveProject.Tasks
     If (BiqTask.id >= IndexTaskFirst And BiqTask.id <= IndexTaskLast) Then
       If (BiqTask.Assignments(1).ResourceName = TaskActor And BiqTask.Assignments(1).Units > FindProcent) Then
         FindProcent = BiqTask.Assignments(1).Units
-        NumberBiq = BiqTask.Id
+        NumberBiq = BiqTask.id
       End If
     End If
   Next BiqTask
+  Call SetTimeForTxt(Timer - TimeForSet, "  DefinMainTaskForRes: ", False, False)
   DefinMainTaskForRes = NumberBiq
-  Call SetTimeForTxt(Timer - TimeForSet,"  DefinMainTaskForRes: ", False, False)
-    
-End Function'DefinMainTaskForRes
+  
+End Function 'DefinMainTaskForRes
 
 'Назначение ресурса на задачу
 Sub SetTaskResProcent(BiqTask, TaskActorId, Percent)
@@ -632,7 +629,8 @@ Sub AddNewTask(MainTask, ByRef FirstTask, BiqStartDate, TaskJiraId, TaskType, Ta
   NewTask.SetField FieldID:=projectField_JiraProjName, Value:=TaskType
   NewTask.SetField FieldID:=projectField_TypeWork, Value:=TaskTypeWork
   NewTask.SetField FieldID:=projectField_Actor, Value:=TaskActor
-        
+  NewTask.SetField FieldID:=projectField_ImpDate, Value:=tbImpDate
+  NewTask.SetField FieldID:=projectField_EmpImpTask, Value:=Employee
   'Запись времени в текстовик
   Call SetTimeForTxt(Timer - TimeForSet, "  AddNewTask: ", False, False)
   
@@ -653,6 +651,8 @@ Sub InitFieldConst()
   projectField_End = FieldNameToFieldConstant("Окончание", pjProject)
   projectField_ITService = FieldNameToFieldConstant("ИТ-Сервис", pjProject)
   projectField_TypeWork = FieldNameToFieldConstant("Тип работ", pjProject)
+  projectField_ImpDate = FieldNameToFieldConstant("Дата импорта", pjProject)
+  projectField_EmpImpTask = FieldNameToFieldConstant("Сотрудник импортировавший задачу", pjProject)
   projectField_Teg = FieldNameToFieldConstant("Тэг", pjResource)
   projectField_ResGroup = FieldNameToFieldConstant("Группа", pjResource)
   projectField_ResGroupCk = FieldNameToFieldConstant("Группа ЦК", pjResource)
@@ -668,7 +668,7 @@ End Sub
 Private Sub GetExcelFileCFTButton_Click()
   FileNameCFTTextBox.Text = ShowGetOpenDialog()
   If (TBNumBIQ.Text = "") Then
-    TBNumBIQ.Text = GetBiqNum(FileNameCFTTextBox.Text )
+    TBNumBIQ.Text = GetBiqNum(FileNameCFTTextBox.Text)
   End If
 End Sub
 
@@ -738,17 +738,35 @@ Private Sub DeleteButton_Click()
   InitFieldConst
   BIQNum = TBNumBIQ 'Номер BIQ-задачи
   BiqTaskID = 0
-  If MsgBox("Вы уверены что хотите удалить " & BIQNum & "?", vbYesNo, "Удаление") = vbYes Then
-    For Each BiqTask In ActiveProject.Tasks
-      If BiqTask.GetField(FieldID:=projectField_JirID) = BIQNum Then
-        BiqTaskID = BiqTask.id
-        BiqTask.Delete 'Удаление BIQ-задачи
+  'Бежим по всем задачам
+  For Each BiqTask In ActiveProject.Tasks
+    If BiqTask.GetField(FieldID:=projectField_JirID) = BIQNum Then 
+      BiqTaskID = BiqTask.id
+      'Запрос для случая когда удаляется задача, которая импортирована не сегодня
+      If BiqTask.GetField(FieldID:=projectField_ImpDate) < Format(Date, "dd/mm/yyyy") Then
+        If MsgBox("Задача была импортирована не сегодня. Удаление таких задач не рекомендуется. Вы уверены, что хотите удалить задачу " & BIQNum & "?", vbYesNo, "Удаление") = vbYes Then
+          BiqTask.Delete 'Удаление BIQ-задачи
+          Exit Sub
+        End If
       End If
-    Next BiqTask
-    If BiqTaskID = 0 Then
-      MsgBox ("Такой BIQ-задачи нет")
-      Exit Sub
+      'Запрос для случая когда удаляется задача, на которой нет даты импортирования
+      If BiqTask.GetField(FieldID:=projectField_ImpDate) = "" Then
+        If MsgBox("Задача была создана вручную. Удаление таких задач не рекомендуется. Вы уверены, что хотите удалить задачу " & BIQNum & "?", vbYesNo, "Удаление") = vbYes Then
+          BiqTask.Delete 'Удаление BIQ-задачи
+          Exit Sub
+        End If
+      End If
+      'В остальных случаях запрос стандартный
+      If MsgBox("Вы уверены что хотите удалить " & BIQNum & "?", vbYesNo, "Удаление") = vbYes Then
+        BiqTask.Delete 'Удаление BIQ-задачи
+        Exit Sub
+      End If
     End If
+  Next BiqTask
+  
+  If BiqTaskID = 0 Then
+    MsgBox ("Такой BIQ-задачи нет")
+    Exit Sub
   End If
   'Запись протокола работы
   Call SetProtocolJob("Удаление")
