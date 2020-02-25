@@ -421,6 +421,7 @@ Sub FillResources(TaskGroupCK, FuncArea, TaskTeg, SystemCode, IndexTaskFirst, In
         
 End Sub
 
+'функция поиска номера главной задачи
 Public Function DefinMainTaskForRes(IndexTaskFirst, IndexTaskLast, TaskActor) As Long
   TimeForSet = Timer
   Dim BiqTask As Task
