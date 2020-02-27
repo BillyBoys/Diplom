@@ -1,41 +1,37 @@
 Начало импорта 
-  AddNewTask: 4,882813E-03
-  AddNewTask: 6,835938E-03
+  AddNewTask: 3,90625E-03
+  AddNewTask: 0,0078125
   AddNewTask: 0,0234375
-  AddNewTask: 1,757813E-02
-  AddNewTask: 1,757813E-02
+  AddNewTask: 1,171875E-02
+  AddNewTask: 1,171875E-02
+  AddNewTask: 1,171875E-02
+  AddNewTask: 1,171875E-02
+  AddNewTask: 0,015625
   AddNewTask: 0,015625
   AddNewTask: 1,171875E-02
-  AddNewTask: 1,855469E-02
-  AddNewTask: 1,367188E-02
+  AddNewTask: 1,171875E-02
   AddNewTask: 0,015625
-  AddNewTask: 1,269531E-02
-  AddNewTask: 1,855469E-02
-  AddNewTask: 1,171875E-02
-  AddNewTask: 2,050781E-02
-  AddNewTask: 1,171875E-02
-  AddNewTask: 1,953125E-02
-  AddNewTask: 1,269531E-02
   AddNewTask: 1,171875E-02
   AddNewTask: 1,171875E-02
-  TaskPredInPut: 0,1367188
-  DefinMainTaskForRes: 2,929688E-03
-  DefinMainTaskForRes: 2,929688E-03
-  DefinMainTaskForRes: 2,929688E-03
-  DefinMainTaskForRes: 2,929688E-03
-  DefinMainTaskForRes: 2,929688E-03
-  DefinMainTaskForRes: 2,929688E-03
-  DefinMainTaskForRes: 1,953125E-03
-  DefinMainTaskForRes: 2,929688E-03
+  AddNewTask: 0,015625
+  AddNewTask: 1,171875E-02
+  AddNewTask: 0,015625
+  AddNewTask: 0,015625
+  AddNewTask: 1,171875E-02
+  TaskPredInPut: 0,1210938
   DefinMainTaskForRes: 3,90625E-03
-  DefinMainTaskForRes: 2,929688E-03
-  DefinMainTaskForRes: 2,929688E-03
-  DefinMainTaskForRes: 1,953125E-03
-  DefinMainTaskForRes: 1,953125E-03
-  DefinMainTaskForRes: 2,929688E-03
-  DefinMainTaskForRes: 2,929688E-03
-  FillResources: 0,2207031
-  ExtendTasks: 0,8300781
-  StretchTasks: 1,855469E-02
-  CreateTasksByExcel: 2,611328
-Конец импорта 2,65332
+  DefinMainTaskForRes: 3,90625E-03
+  DefinMainTaskForRes: 3,90625E-03
+  DefinMainTaskForRes: 3,90625E-03
+  DefinMainTaskForRes: 3,90625E-03
+  DefinMainTaskForRes: 3,90625E-03
+  DefinMainTaskForRes: 0
+  DefinMainTaskForRes: 3,90625E-03
+  DefinMainTaskForRes: 3,90625E-03
+  DefinMainTaskForRes: 3,90625E-03
+  DefinMainTaskForRes: 0
+  DefinMainTaskForRes: 0
+  DefinMainTaskForRes: 3,90625E-03
+  FillResources: 0,25
+  CreateTasksByExcel: 1,664063
+Конец импорта 1,707031

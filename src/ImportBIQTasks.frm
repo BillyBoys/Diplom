@@ -162,7 +162,7 @@ Public Function CreateTasksByExcel(NumBIQ, StartDate, ExcelFileName) As Boolean
   If SearchIdentBIQ(TaskType) = True Then
     If MsgBox("Такая задача уже есть в системе, продолжить добавление?", vbYesNo, "Добавление") = vbNo Then
       xlobject.Quit 'Закрытие Excel файла
-      CreateTasksByExcel = False
+      CreateTasksByExcel = True
       Exit Function
     End If
   Else
@@ -388,37 +388,57 @@ Sub FillResources(TaskGroupCK, FuncArea, TaskTeg, SystemCode, IndexTaskFirst, In
   'Начинается отсчет времени функции
   TimeForSet = Timer
   Dim BiqTask As Task
-  Dim Ass     As Assignment
   Dim Res     As Resource
+  
   'Бежим по всем задачам требуеющих поиска исполнителей
-  For Each BiqTask In ActiveProject.Tasks
-    If (BiqTask.id >= IndexTaskFirst And BiqTask.id <= IndexTaskLast) Then
-      NumMainTask = DefinMainTaskForRes(IndexTaskFirst, IndexTaskLast, BiqTask.Assignments(1).ResourceName)
-      'Бежим по всем необходимым ресурсам
-      For Each Ass In BiqTask.Assignments
-        'Получаем группу ресурсов
-        TaskActor = Ass.ResourceName
-        'Бежим по всем досутпным ресурсам - ищем исполнителя
-        For Each Res In ActiveProject.Resources
-          'Условия жесткие
-          If ((Res.GetField(FieldID:=projectField_System1) = SystemCode) Or (Res.GetField(FieldID:=projectField_System2) = SystemCode)) Then
-            'Условия мягкие
-            If (Res.GetField(FieldID:=projectField_ResGroupCk) = TaskGroupCK) And (TaskTeg = "" Or Res.GetField(FieldID:=projectField_Teg) = TaskTeg) _
-            And ((Res.GetField(FieldID:=projectField_FuncArea1) = FuncArea) Or (Res.GetField(FieldID:=projectField_FuncArea2) = FuncArea) Or (Res.GetField(FieldID:=projectField_FuncArea3) = FuncArea)) _
-            And (Res.GetField(FieldID:=projectField_ResGroup) = Left(TaskActor, Len(TaskActor) - 1)) Then
-              Percent = Ass.Units
-              TaskActorId = Res.id
-              Call SetTaskResProcent(BiqTask, TaskActorId, Percent)
-              Exit For
-            End If
-          End If
-        Next Res
-      Next Ass
+  For index = 1 to 3
+    If index=1 Then 
+      TaskActor="Аналитик"
     End If
-  Next BiqTask
+    If index=2 Then 
+      TaskActor="Разработчик"
+    End If
+    If index=3 Then 
+      TaskActor="Тестировщик"
+    End If
+    'Ищем главную задачу для каждого типа(Аналитик,Разработчик,Тестировщик)
+    For Each BiqTask In ActiveProject.Tasks
+      If (BiqTask.id >= IndexTaskFirst And BiqTask.id <= IndexTaskLast) Then
+        If (TaskActor=Left(BiqTask.Assignments(1).ResourceName, Len(BiqTask.Assignments(1).ResourceName) - 1)) Then
+          NumMainTask = DefinMainTaskForRes(IndexTaskFirst, IndexTaskLast, BiqTask.Assignments(1).ResourceName)
+        End If
+        If (BiqTask.id = NumMainTask) Then
+          For Each Res In ActiveProject.Resources
+            'Условия жесткие
+            If ((Res.GetField(FieldID:=projectField_System1) = SystemCode) Or (Res.GetField(FieldID:=projectField_System2) = SystemCode)) _
+            And (Res.GetField(FieldID:=projectField_ResGroup) = TaskActor ) Then
+              'Условия мягкие
+              If (Res.GetField(FieldID:=projectField_ResGroupCk) = TaskGroupCK) And (TaskTeg = "" Or Res.GetField(FieldID:=projectField_Teg) = TaskTeg) _
+              And ((Res.GetField(FieldID:=projectField_FuncArea1) = FuncArea) Or (Res.GetField(FieldID:=projectField_FuncArea2) = FuncArea) Or (Res.GetField(FieldID:=projectField_FuncArea3) = FuncArea)) Then
+                Percent = BiqTask.Assignments(1).Units
+                TaskActorId = Res.id
+                Call SetTaskResProcent(BiqTask, TaskActorId, Percent)
+                Exit For
+              End If
+            End If
+          Next Res
+          Exit For
+        End If
+      End If
+    Next BiqTask
+    'Заполняем побочные задачи этого типа(Аналитик,Разработчик,Тестировщик)
+    For Each BiqTask In ActiveProject.Tasks
+      If (BiqTask.id >= IndexTaskFirst And BiqTask.id <= IndexTaskLast) Then
+        If (TaskActor=Left(BiqTask.Assignments(1).ResourceName, Len(BiqTask.Assignments(1).ResourceName) - 1)) Then
+          Percent = BiqTask.Assignments(1).Units
+          Call SetTaskResProcent(BiqTask, TaskActorId, Percent)
+        End If
+      End If
+    Next BiqTask
+  Next index
   'Запись времени в текстовик
   Call SetTimeForTxt(Timer - TimeForSet, "  FillResources: ", False, False)
-        
+
 End Sub
 
 'функция поиска номера главной задачи
