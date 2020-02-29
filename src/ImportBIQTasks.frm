@@ -115,8 +115,8 @@ Private Sub UserForm_Initialize()
   tbImpDate = Format(Date, "dd/mm/yyyy")
   Employee = 129
   TBNumBIQ = "BIQ-5257"
-  'FileNameCFTTextBox = "C:\Users\Эрнест\Documents\GitHub\Diplom\test\Расшифровка ЭО BIQ5257.xlsx"
-  FileNameCFTTextBox = "d:\info\Эрнест\Diplom\test\Расшифровка ЭО BIQ5257.xlsx"
+  FileNameCFTTextBox = "C:\Users\Эрнест\Documents\GitHub\Diplom\test\Расшифровка ЭО BIQ5257.xlsx"
+  'FileNameCFTTextBox = "d:\info\Эрнест\Diplom\test\Расшифровка ЭО BIQ5257.xlsx"
   TBNumBIQFDelete = 5257
   
 End Sub
@@ -364,7 +364,7 @@ Sub StretchTasks(IndexTaskFirst, IndexTaskLast)
         procent = HoursToWork / AllHoursInDiff * 100
         RoundProcent = WorksheetFunction.Round(procent + 0.5, 0)
         'Замена процента
-        Call SetTaskResProcent(BiqTaskDesc, -1, RoundProcent)
+        Call SetTaskResProcent(BiqTaskDesc, -1, RoundProcent/100)
 
         'Текущие дата начала
         DateStartDesc = Mid(BiqTaskDesc.GetField(FieldID:=projectField_Start), 4)
@@ -465,7 +465,7 @@ Sub SetTaskResProcent(BiqTask, TaskActorId, Percent)
   'Попытка обновления если ресурс уже есть на задаче
   For Each Ass In BiqTask.Assignments
     If TaskActorId = -1 Or Ass.ResourceID = TaskActorId Then
-      Ass.Units = Percent
+      Ass.Units = Percent 
       If TaskActorId <> -1 Then
         Exit Sub
       End If
