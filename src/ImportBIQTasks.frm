@@ -1,7 +1,7 @@
 VERSION 5.00
 Begin {C62A69F0-16DC-11CE-9E98-00AA00574A4F} ImportBIQTasks 
    Caption         =   "Перенос BIQ задач "
-   ClientHeight    =   5415
+   ClientHeight    =   4755
    ClientLeft      =   120
    ClientTop       =   465
    ClientWidth     =   8325.001
@@ -13,6 +13,7 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
+
 
 
 
@@ -112,8 +113,6 @@ End Sub
 ' Инициализация полей
 Private Sub UserForm_Initialize()
   tbStartDate = Format(Date, "dd/mm/yyyy")
-  tbImpDate = Format(Date, "dd/mm/yyyy")
-  Employee = 129
   TBNumBIQ = "BIQ-5257"
   FileNameCFTTextBox = "C:\Users\Эрнест\Documents\GitHub\Diplom\test\Расшифровка ЭО BIQ5257.xlsx"
   'FileNameCFTTextBox = "d:\info\Эрнест\Diplom\test\Расшифровка ЭО BIQ5257.xlsx"
@@ -214,7 +213,7 @@ Public Function CreateTasksByExcel(NumBIQ, StartDate, ExcelFileName) As Boolean
   Call StretchTasks(IndexTaskFirst, IndexTaskLast)
   
   'Дата завершения
-  Call TaskDateEnd (IndexTaskFirst, IndexTaskLast)
+  Call TaskDateEnd(IndexTaskFirst, IndexTaskLast)
   
   'Запись времени в текстовик
   Call SetTimeForTxt(Timer - TimeForSet, "  CreateTasksByExcel: ", False, False)
@@ -364,7 +363,7 @@ Sub StretchTasks(IndexTaskFirst, IndexTaskLast)
         procent = HoursToWork / AllHoursInDiff * 100
         RoundProcent = WorksheetFunction.Round(procent + 0.5, 0)
         'Замена процента
-        Call SetTaskResProcent(BiqTaskDesc, -1, RoundProcent/100)
+        Call SetTaskResProcent(BiqTaskDesc, -1, RoundProcent / 100)
 
         'Текущие дата начала
         DateStartDesc = Mid(BiqTaskDesc.GetField(FieldID:=projectField_Start), 4)
@@ -391,27 +390,27 @@ Sub FillResources(TaskGroupCK, FuncArea, TaskTeg, SystemCode, IndexTaskFirst, In
   Dim Res     As Resource
   
   'Бежим по всем задачам требуеющих поиска исполнителей
-  For index = 1 to 3
-    If index=1 Then 
-      TaskActor="Аналитик"
+  For Index = 1 To 3
+    If Index = 1 Then
+      TaskActor = "Аналитик"
     End If
-    If index=2 Then 
-      TaskActor="Разработчик"
+    If Index = 2 Then
+      TaskActor = "Разработчик"
     End If
-    If index=3 Then 
-      TaskActor="Тестировщик"
+    If Index = 3 Then
+      TaskActor = "Тестировщик"
     End If
     'Ищем главную задачу для каждого типа(Аналитик,Разработчик,Тестировщик)
     For Each BiqTask In ActiveProject.Tasks
       If (BiqTask.id >= IndexTaskFirst And BiqTask.id <= IndexTaskLast) Then
-        If (TaskActor=Left(BiqTask.Assignments(1).ResourceName, Len(BiqTask.Assignments(1).ResourceName) - 1)) Then
+        If (TaskActor = Left(BiqTask.Assignments(1).ResourceName, Len(BiqTask.Assignments(1).ResourceName) - 1)) Then
           NumMainTask = DefinMainTaskForRes(IndexTaskFirst, IndexTaskLast, BiqTask.Assignments(1).ResourceName)
         End If
         If (BiqTask.id = NumMainTask) Then
           For Each Res In ActiveProject.Resources
             'Условия жесткие
             If ((Res.GetField(FieldID:=projectField_System1) = SystemCode) Or (Res.GetField(FieldID:=projectField_System2) = SystemCode)) _
-            And (Res.GetField(FieldID:=projectField_ResGroup) = TaskActor ) Then
+            And (Res.GetField(FieldID:=projectField_ResGroup) = TaskActor) Then
               'Условия мягкие
               If (Res.GetField(FieldID:=projectField_ResGroupCk) = TaskGroupCK) And (TaskTeg = "" Or Res.GetField(FieldID:=projectField_Teg) = TaskTeg) _
               And ((Res.GetField(FieldID:=projectField_FuncArea1) = FuncArea) Or (Res.GetField(FieldID:=projectField_FuncArea2) = FuncArea) Or (Res.GetField(FieldID:=projectField_FuncArea3) = FuncArea)) Then
@@ -429,13 +428,13 @@ Sub FillResources(TaskGroupCK, FuncArea, TaskTeg, SystemCode, IndexTaskFirst, In
     'Заполняем побочные задачи этого типа(Аналитик,Разработчик,Тестировщик)
     For Each BiqTask In ActiveProject.Tasks
       If (BiqTask.id >= IndexTaskFirst And BiqTask.id <= IndexTaskLast) Then
-        If (TaskActor=Left(BiqTask.Assignments(1).ResourceName, Len(BiqTask.Assignments(1).ResourceName) - 1)) Then
+        If (TaskActor = Left(BiqTask.Assignments(1).ResourceName, Len(BiqTask.Assignments(1).ResourceName) - 1)) Then
           Percent = BiqTask.Assignments(1).Units
           Call SetTaskResProcent(BiqTask, TaskActorId, Percent)
         End If
       End If
     Next BiqTask
-  Next index
+  Next Index
   'Запись времени в текстовик
   Call SetTimeForTxt(Timer - TimeForSet, "  FillResources: ", False, False)
 
@@ -465,7 +464,7 @@ Sub SetTaskResProcent(BiqTask, TaskActorId, Percent)
   'Попытка обновления если ресурс уже есть на задаче
   For Each Ass In BiqTask.Assignments
     If TaskActorId = -1 Or Ass.ResourceID = TaskActorId Then
-      Ass.Units = Percent 
+      Ass.Units = Percent
       If TaskActorId <> -1 Then
         Exit Sub
       End If
@@ -650,8 +649,8 @@ Sub AddNewTask(MainTask, ByRef FirstTask, BiqStartDate, TaskJiraId, TaskType, Ta
   NewTask.SetField FieldID:=projectField_JiraProjName, Value:=TaskType
   NewTask.SetField FieldID:=projectField_TypeWork, Value:=TaskTypeWork
   NewTask.SetField FieldID:=projectField_Actor, Value:=TaskActor
-  NewTask.SetField FieldID:=projectField_ImpDate, Value:=tbImpDate
-  NewTask.SetField FieldID:=projectField_EmpImpTask, Value:=Employee
+  NewTask.SetField FieldID:=projectField_ImpDate, Value:=Format(Date, "dd/mm/yyyy")
+  NewTask.SetField FieldID:=projectField_EmpImpTask, Value:=Application.UserName
   'Запись времени в текстовик
   Call SetTimeForTxt(Timer - TimeForSet, "  AddNewTask: ", False, False)
   
@@ -761,7 +760,7 @@ Private Sub DeleteButton_Click()
   BiqTaskID = 0
   'Бежим по всем задачам
   For Each BiqTask In ActiveProject.Tasks
-    If BiqTask.GetField(FieldID:=projectField_JirID) = BIQNum Then 
+    If BiqTask.GetField(FieldID:=projectField_JirID) = BIQNum Then
       BiqTaskID = BiqTask.id
       'Запрос для случая когда удаляется задача, которая импортирована не сегодня
       If BiqTask.GetField(FieldID:=projectField_ImpDate) < Format(Date, "dd/mm/yyyy") Then
