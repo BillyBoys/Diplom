@@ -391,6 +391,7 @@ Sub FillResources(TaskGroupCK, FuncArea, TaskTeg, SystemCode, IndexTaskFirst, In
   
   'Бежим по всем задачам требуеющих поиска исполнителей
   For Index = 1 To 3
+  MaxScoreRes = 0
     If Index = 1 Then
       TaskActor = "Аналитик"
     End If
@@ -400,27 +401,40 @@ Sub FillResources(TaskGroupCK, FuncArea, TaskTeg, SystemCode, IndexTaskFirst, In
     If Index = 3 Then
       TaskActor = "Тестировщик"
     End If
+    NumMainTask = DefinMainTaskForRes(IndexTaskFirst, IndexTaskLast, TaskActor)
     'Ищем главную задачу для каждого типа(Аналитик,Разработчик,Тестировщик)
     For Each BiqTask In ActiveProject.Tasks
       If (BiqTask.id >= IndexTaskFirst And BiqTask.id <= IndexTaskLast) Then
-        If (TaskActor = Left(BiqTask.Assignments(1).ResourceName, Len(BiqTask.Assignments(1).ResourceName) - 1)) Then
-          NumMainTask = DefinMainTaskForRes(IndexTaskFirst, IndexTaskLast, BiqTask.Assignments(1).ResourceName)
-        End If
         If (BiqTask.id = NumMainTask) Then
           For Each Res In ActiveProject.Resources
+            ScoreRes=0
             'Условия жесткие
-            If ((Res.GetField(FieldID:=projectField_System1) = SystemCode) Or (Res.GetField(FieldID:=projectField_System2) = SystemCode)) _
-            And (Res.GetField(FieldID:=projectField_ResGroup) = TaskActor) Then
-              'Условия мягкие
-              If (Res.GetField(FieldID:=projectField_ResGroupCk) = TaskGroupCK) And (TaskTeg = "" Or Res.GetField(FieldID:=projectField_Teg) = TaskTeg) _
-              And ((Res.GetField(FieldID:=projectField_FuncArea1) = FuncArea) Or (Res.GetField(FieldID:=projectField_FuncArea2) = FuncArea) Or (Res.GetField(FieldID:=projectField_FuncArea3) = FuncArea)) Then
-                Percent = BiqTask.Assignments(1).Units
-                TaskActorId = Res.id
-                Call SetTaskResProcent(BiqTask, TaskActorId, Percent)
-                Exit For
+            If ((Res.GetField(FieldID:=projectField_System1) = SystemCode) Or (Res.GetField(FieldID:=projectField_System2) = SystemCode)) Then
+              If (Res.GetField(FieldID:=projectField_ResGroup) = TaskActor) Then
+                'Условия мягкие
+                'Проверка по группе
+                If (Res.GetField(FieldID:=projectField_ResGroupCk) = TaskGroupCK) Then
+                  ScoreRes = ScoreRes + 25
+                End If
+                'Проверка по тегу
+                If (TaskTeg = "" Or Res.GetField(FieldID:=projectField_Teg) = TaskTeg) Then
+                  ScoreRes = ScoreRes + 25
+                End If
+                'Проверка по Функциональной области
+                If ((Res.GetField(FieldID:=projectField_FuncArea1) = FuncArea) Or (Res.GetField(FieldID:=projectField_FuncArea2) = FuncArea) Or (Res.GetField(FieldID:=projectField_FuncArea3) = FuncArea)) Then
+                  ScoreRes = ScoreRes + 25
+                End If 
               End If
             End If
+          'Проверка скорринга текущего ресурса с максимальным
+          If ScoreRes > MaxScoreRes Then
+            Percent = BiqTask.Assignments(1).Units
+            TaskActorId = Res.id
+            MaxScoreRes = ScoreRes
+          End If
           Next Res
+          'Запись в главную задачу
+          Call SetTaskResProcent(BiqTask, TaskActorId, Percent)
           Exit For
         End If
       End If
@@ -447,7 +461,7 @@ Public Function DefinMainTaskForRes(IndexTaskFirst, IndexTaskLast, TaskActor) As
   FindProcent = 0
   For Each BiqTask In ActiveProject.Tasks
     If (BiqTask.id >= IndexTaskFirst And BiqTask.id <= IndexTaskLast) Then
-      If (BiqTask.Assignments(1).ResourceName = TaskActor And BiqTask.Assignments(1).Units > FindProcent) Then
+      If (Left(BiqTask.Assignments(1).ResourceName, Len(BiqTask.Assignments(1).ResourceName) - 1) = TaskActor And BiqTask.Assignments(1).Units > FindProcent) Then
         FindProcent = BiqTask.Assignments(1).Units
         NumberBiq = BiqTask.id
       End If
