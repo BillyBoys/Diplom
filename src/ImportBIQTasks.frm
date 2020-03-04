@@ -306,7 +306,7 @@ End Function 'GetResLoadTask
 Public Function GetResLoad(CheckDate, CheckRes) As Single
   Dim resAss  As Assignment
   For Each resAss In CheckRes.Assignments
-    If resAss.Start <= CheckDate And resAss.Finish >= CheckDate Then
+    If resAss.Start <= CheckDate And CheckDate <= resAss.Finish Then
       Set TaskTSD = resAss.TimeScaleData(CheckDate, CheckDate, TimescaleUnit:=4)
       For i = 1 To TaskTSD.Count
         If Not TaskTSD(i).Value = "" Then
@@ -318,6 +318,23 @@ Public Function GetResLoad(CheckDate, CheckRes) As Single
   GetResLoad = TimePerest
 
 End Function 'GetResLoad
+
+'функция получения часов за период
+Public Function GetResLoadPeriod(Res, BegDate, EndDate) As Single
+  Dim resAss  As Assignment
+  For Each resAss In CheckRes.Assignments
+    If resAss.Start <= BegDate And EndDate <= resAss.Finish Then
+      Set TaskTSD = resAss.TimeScaleData(BegDate, EndDate, TimescaleUnit:=4)
+      For i = 1 To TaskTSD.Count
+        If Not TaskTSD(i).Value = "" Then
+          TimePerest = TimePerest + TaskTSD(i).Value / (60)  'Нагрузку часов в день
+        End If
+      Next i
+    End If
+  Next resAss
+  GetResLoadPeriod = TimePerest
+  
+End Function 'GetResLoadPeriod
 
 'функция получения доступности 0..1
 Public Function GetResAvailability(CheckDate, CheckRes) As Single
