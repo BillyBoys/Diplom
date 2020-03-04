@@ -269,7 +269,7 @@ Sub ExtendTasks(IndexTaskFirst, IndexTaskLast)
           If HoursDayHas < HoursDayLoad Then
             '≈сли перегруз можно сн€ть текущей задачей
             If HoursDayLoad - HoursDayHas < HoursDayLoadBiq Then
-              Percent = (HoursDayHas - (HoursDayLoad - HoursDayLoadBiq)) / HoursDayHas * 100
+              Percent = (HoursDayHas - (HoursDayLoad - HoursDayLoadBiq)) / HoursDayHas
               Call SetTaskResProcent(BiqTask, resAss.ResourceID, Percent)
             End If
           End If
