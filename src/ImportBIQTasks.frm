@@ -114,8 +114,8 @@ End Sub
 Private Sub UserForm_Initialize()
   tbStartDate = Format(Date, "dd/mm/yyyy")
   TBNumBIQ = "BIQ-5257"
-  FileNameCFTTextBox = "C:\Users\Эрнест\Documents\GitHub\Diplom\test\Расшифровка ЭО BIQ5257.xlsx"
-  'FileNameCFTTextBox = "d:\info\Эрнест\Diplom\test\Расшифровка ЭО BIQ5257.xlsx"
+  'FileNameCFTTextBox = "C:\Users\Эрнест\Documents\GitHub\Diplom\test\Расшифровка ЭО BIQ5257.xlsx"
+  FileNameCFTTextBox = "d:\info\Эрнест\Diplom\test\Расшифровка ЭО BIQ5257.xlsx"
   TBNumBIQFDelete = 5257
   
 End Sub
@@ -146,10 +146,12 @@ Public Function CreateTasksByExcel(NumBIQ, StartDate, ExcelFileName) As Boolean
   SystemCode = ExcelSheet.Cells(2, 3) 'Система
   TaskType = ExcelSheet.Cells(2, 4)   'Оцениваемая система ЦФТ
   ITService = ExcelSheet.Cells(2, 5)  'ИТ-Сервис
-  TaskGroupCK = ExcelSheet.Cells(1, 2)  'Группа
+  TaskGroupCK = ExcelSheet.Cells(1, 2)'Группа ЦК
   FuncArea = ExcelSheet.Cells(2, 2)   'Функциональная область
   TaskTeg = ExcelSheet.Cells(3, 2)    'Тэг
-
+  ScoreTaskGroupCK = ExcelSheet.Cells(8, 11)'Скоринг Группа ЦК
+  ScoreFuncArea = ExcelSheet.Cells(8, 12)   'Скоринг Функциональная область
+  ScoreTaskTeg = ExcelSheet.Cells(8, 13)    'Скоринг Тэг
   'Пытаемся найти главную задачу по BIQ
   BiqTaskID = 0
   For Each BiqTask In ActiveProject.Tasks
@@ -204,7 +206,7 @@ Public Function CreateTasksByExcel(NumBIQ, StartDate, ExcelFileName) As Boolean
   xlobject.Quit 'Закрытие Excel файла
   
   'Заполняем исполнителей
-  Call FillResources(TaskGroupCK, FuncArea, TaskTeg, SystemCode, IndexTaskFirst, IndexTaskLast)
+  Call FillResources(TaskGroupCK, FuncArea, TaskTeg, SystemCode, IndexTaskFirst, IndexTaskLast, ScoreTaskGroupCK, ScoreFuncArea, ScoreTaskTeg)
   
   'Растягивание задач для устранения перегруза
   Call ExtendTasks(IndexTaskFirst, IndexTaskLast)
@@ -400,12 +402,11 @@ Sub StretchTasks(IndexTaskFirst, IndexTaskLast)
 End Sub
 
 'процедура назначения исполнителей
-Sub FillResources(TaskGroupCK, FuncArea, TaskTeg, SystemCode, IndexTaskFirst, IndexTaskLast)
+Sub FillResources(TaskGroupCK, FuncArea, TaskTeg, SystemCode, IndexTaskFirst, IndexTaskLast, ScoreTaskGroupCK, ScoreFuncArea, ScoreTaskTeg)
   'Начинается отсчет времени функции
   TimeForSet = Timer
   Dim BiqTask As Task
   Dim Res     As Resource
-  
   'Бежим по всем задачам требуеющих поиска исполнителей
   For Index = 1 To 3
   MaxScoreRes = 0
@@ -423,32 +424,33 @@ Sub FillResources(TaskGroupCK, FuncArea, TaskTeg, SystemCode, IndexTaskFirst, In
     For Each BiqTask In ActiveProject.Tasks
       If (BiqTask.id >= IndexTaskFirst And BiqTask.id <= IndexTaskLast) Then
         If (BiqTask.id = NumMainTask) Then
+          MaxScoreRes = 0
           For Each Res In ActiveProject.Resources
-            ScoreRes=0
+            ScoreRes = 0
             'Условия жесткие
             If ((Res.GetField(FieldID:=projectField_System1) = SystemCode) Or (Res.GetField(FieldID:=projectField_System2) = SystemCode)) Then
               If (Res.GetField(FieldID:=projectField_ResGroup) = TaskActor) Then
                 'Условия мягкие
                 'Проверка по группе
                 If (Res.GetField(FieldID:=projectField_ResGroupCk) = TaskGroupCK) Then
-                  ScoreRes = ScoreRes + 25
+                  ScoreRes = ScoreRes + ScoreTaskGroupCK
                 End If
                 'Проверка по тегу
                 If (TaskTeg = "" Or Res.GetField(FieldID:=projectField_Teg) = TaskTeg) Then
-                  ScoreRes = ScoreRes + 25
+                  ScoreRes = ScoreRes + ScoreTaskTeg
                 End If
                 'Проверка по Функциональной области
                 If ((Res.GetField(FieldID:=projectField_FuncArea1) = FuncArea) Or (Res.GetField(FieldID:=projectField_FuncArea2) = FuncArea) Or (Res.GetField(FieldID:=projectField_FuncArea3) = FuncArea)) Then
-                  ScoreRes = ScoreRes + 25
+                  ScoreRes = ScoreRes + ScoreFuncArea
                 End If 
               End If
             End If
-          'Проверка скорринга текущего ресурса с максимальным
-          If ScoreRes > MaxScoreRes Then
-            Percent = BiqTask.Assignments(1).Units
-            TaskActorId = Res.id
-            MaxScoreRes = ScoreRes
-          End If
+            'Проверка скорринга текущего ресурса с максимальным
+            If ScoreRes > MaxScoreRes Then
+              Percent = BiqTask.Assignments(1).Units
+              TaskActorId = Res.id
+              MaxScoreRes = ScoreRes
+            End If
           Next Res
           'Запись в главную задачу
           Call SetTaskResProcent(BiqTask, TaskActorId, Percent)
