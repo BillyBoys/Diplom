@@ -1,10 +1,10 @@
 VERSION 5.00
 Begin {C62A69F0-16DC-11CE-9E98-00AA00574A4F} ImportBIQTasks 
    Caption         =   "Перенос BIQ задач "
-   ClientHeight    =   4755
+   ClientHeight    =   5625
    ClientLeft      =   120
    ClientTop       =   465
-   ClientWidth     =   8325.001
+   ClientWidth     =   8220.001
    OleObjectBlob   =   "ImportBIQTasks.frx":0000
    StartUpPosition =   1  'CenterOwner
 End
@@ -13,6 +13,8 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
+
+
 
 
 
@@ -113,6 +115,10 @@ End Sub
 ' Инициализация полей
 Private Sub UserForm_Initialize()
   tbStartDate = Format(Date, "dd/mm/yyyy")
+  tbFieldTest = "Оценка тестировщика"
+  tbFieldPodr = "Разработка"
+  tbFieldHoursTest = 10
+  tbFieldHoursPodr = 20
   TBNumBIQ = "BIQ-5257"
   'FileNameCFTTextBox = "C:\Users\Эрнест\Documents\GitHub\Diplom\test\Расшифровка ЭО BIQ5257.xlsx"
   FileNameCFTTextBox = "d:\info\Эрнест\Diplom\test\Расшифровка ЭО BIQ5257.xlsx"
@@ -146,10 +152,10 @@ Public Function CreateTasksByExcel(NumBIQ, StartDate, ExcelFileName) As Boolean
   SystemCode = ExcelSheet.Cells(2, 3) 'Система
   TaskType = ExcelSheet.Cells(2, 4)   'Оцениваемая система ЦФТ
   ITService = ExcelSheet.Cells(2, 5)  'ИТ-Сервис
-  TaskGroupCK = ExcelSheet.Cells(1, 2)'Группа ЦК
+  TaskGroupCK = ExcelSheet.Cells(1, 2) 'Группа ЦК
   FuncArea = ExcelSheet.Cells(2, 2)   'Функциональная область
   TaskTeg = ExcelSheet.Cells(3, 2)    'Тэг
-  ScoreTaskGroupCK = ExcelSheet.Cells(8, 11)'Скоринг Группа ЦК
+  ScoreTaskGroupCK = ExcelSheet.Cells(8, 11) 'Скоринг Группа ЦК
   ScoreFuncArea = ExcelSheet.Cells(8, 12)   'Скоринг Функциональная область
   ScoreTaskTeg = ExcelSheet.Cells(8, 13)    'Скоринг Тэг
   'Пытаемся найти главную задачу по BIQ
@@ -185,9 +191,9 @@ Public Function CreateTasksByExcel(NumBIQ, StartDate, ExcelFileName) As Boolean
   End If
   
   FirstTask = True
-  For i = 8 To 26
+  For i = 8 To 22
     'Пропускаем строчки Итого и с пустым наименованием
-    If (UCase(Left(Trim(ExcelSheet.Cells(i, 3)), 5))) <> "ИТОГО" And Len(Trim(ExcelSheet.Cells(i, 3))) <> 0 Then
+    If Len(Trim(ExcelSheet.Cells(i, 3))) <> 0 Then
       TypeWork = ExcelSheet.Cells(i, 5) 'Тип работ
       TaskActor = ExcelSheet.Cells(i, 6) 'Исполнитель
       TaskName = Trim(ExcelSheet.Cells(i, 3)) 'Имя задачи
@@ -199,7 +205,18 @@ Public Function CreateTasksByExcel(NumBIQ, StartDate, ExcelFileName) As Boolean
       Call AddNewTask(False, FirstTask, StartDate, "", TaskType, TaskName, TaskHours, BiqTaskID, True, ITService, TypeWork, TaskActor, Index, IndexTaskFirst, IndexTaskLast)
     End If
   Next i
-  
+  'Оценка тестировщика
+  TypeWork = 510 'Тип работ
+  TaskActor = "Тестировщик2" 'Исполнитель
+  TaskName = tbFieldTest 'Имя задачи
+  TaskHours = tbFieldHoursTest 'Время задачи
+  Call AddNewTask(False, FirstTask, StartDate, "", TaskType, TaskName, TaskHours, BiqTaskID, True, ITService, TypeWork, TaskActor, Index, IndexTaskFirst, IndexTaskLast)
+  'Оценка подрядчика
+  TypeWork = 511 'Тип работ
+  TaskActor = "Подрядчик" 'Исполнитель
+  TaskName = tbFieldPodr 'Имя задачи
+  TaskHours = tbFieldHoursPodr 'Время задачи
+  Call AddNewTask(False, FirstTask, StartDate, "", TaskType, TaskName, TaskHours, BiqTaskID, True, ITService, TypeWork, TaskActor, Index, IndexTaskFirst, IndexTaskLast)
   'функция заполнения предшественников
   Call TaskPredInPut(ExcelSheet, StartDate, IndexTaskFirst, IndexTaskLast)
   
@@ -442,7 +459,7 @@ Sub FillResources(TaskGroupCK, FuncArea, TaskTeg, SystemCode, IndexTaskFirst, In
                 'Проверка по Функциональной области
                 If ((Res.GetField(FieldID:=projectField_FuncArea1) = FuncArea) Or (Res.GetField(FieldID:=projectField_FuncArea2) = FuncArea) Or (Res.GetField(FieldID:=projectField_FuncArea3) = FuncArea)) Then
                   ScoreRes = ScoreRes + ScoreFuncArea
-                End If 
+                End If
               End If
             End If
             'Проверка скорринга текущего ресурса с максимальным
