@@ -1,0 +1,13 @@
+C:\Users\Эрнест\source\repos\ImportBIQ\bin\Debug\ImportBIQ.exe.config
+C:\Users\Эрнест\source\repos\ImportBIQ\bin\Debug\ImportBIQ.exe
+C:\Users\Эрнест\source\repos\ImportBIQ\bin\Debug\ImportBIQ.pdb
+C:\Users\Эрнест\source\repos\ImportBIQ\obj\Debug\ImportBIQ.csprojAssemblyReference.cache
+C:\Users\Эрнест\source\repos\ImportBIQ\obj\Debug\ImportBIQ.csproj.ResolveComReference.cache
+C:\Users\Эрнест\source\repos\ImportBIQ\obj\Debug\ImportBIQ.Form1.resources
+C:\Users\Эрнест\source\repos\ImportBIQ\obj\Debug\ImportBIQ.Properties.Resources.resources
+C:\Users\Эрнест\source\repos\ImportBIQ\obj\Debug\ImportBIQ.csproj.GenerateResource.cache
+C:\Users\Эрнест\source\repos\ImportBIQ\obj\Debug\ImportBIQ.csproj.CoreCompileInputs.cache
+C:\Users\Эрнест\source\repos\ImportBIQ\obj\Debug\ImportBIQ.exe
+C:\Users\Эрнест\source\repos\ImportBIQ\obj\Debug\ImportBIQ.pdb
+C:\Users\Эрнест\source\repos\ImportBIQ\obj\Debug\Interop.Microsoft.Office.Interop.MSProject.dll
+C:\Users\Эрнест\source\repos\ImportBIQ\obj\Debug\Interop.PJCALLib.dll
