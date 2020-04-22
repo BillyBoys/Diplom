@@ -120,8 +120,8 @@ Private Sub UserForm_Initialize()
   tbFieldHoursTest = 10
   tbFieldHoursPodr = 20
   TBNumBIQ = "BIQ-5257"
-  'FileNameCFTTextBox = "C:\Users\Эрнест\Documents\GitHub\Diplom\test\Расшифровка ЭО BIQ5257.xlsx"
-  FileNameCFTTextBox = "d:\info\Эрнест\Diplom\test\Расшифровка ЭО BIQ5257.xlsx"
+  FileNameCFTTextBox = "C:\Users\Эрнест\Documents\GitHub\Diplom\test\Расшифровка ЭО BIQ5257.xlsx"
+  'FileNameCFTTextBox = "d:\info\Эрнест\Diplom\test\Расшифровка ЭО BIQ5257.xlsx"
   TBNumBIQFDelete = 5257
   
 End Sub
@@ -205,18 +205,18 @@ Public Function CreateTasksByExcel(NumBIQ, StartDate, ExcelFileName) As Boolean
       Call AddNewTask(False, FirstTask, StartDate, "", TaskType, TaskName, TaskHours, BiqTaskID, True, ITService, TypeWork, TaskActor, Index, IndexTaskFirst, IndexTaskLast)
     End If
   Next i
-  'Оценка тестировщика
-  TypeWork = 510 'Тип работ
-  TaskActor = "Тестировщик2" 'Исполнитель
-  TaskName = tbFieldTest 'Имя задачи
-  TaskHours = tbFieldHoursTest 'Время задачи
-  Call AddNewTask(False, FirstTask, StartDate, "", TaskType, TaskName, TaskHours, BiqTaskID, True, ITService, TypeWork, TaskActor, Index, IndexTaskFirst, IndexTaskLast)
-  'Оценка подрядчика
-  TypeWork = 511 'Тип работ
-  TaskActor = "Подрядчик" 'Исполнитель
-  TaskName = tbFieldPodr 'Имя задачи
-  TaskHours = tbFieldHoursPodr 'Время задачи
-  Call AddNewTask(False, FirstTask, StartDate, "", TaskType, TaskName, TaskHours, BiqTaskID, True, ITService, TypeWork, TaskActor, Index, IndexTaskFirst, IndexTaskLast)
+'  'Оценка тестировщика
+'  TypeWork = 510 'Тип работ
+'  TaskActor = "Тестировщик2" 'Исполнитель
+'  TaskName = tbFieldTest 'Имя задачи
+'  TaskHours = tbFieldHoursTest 'Время задачи
+'  Call AddNewTask(False, FirstTask, StartDate, "", TaskType, TaskName, TaskHours, BiqTaskID, True, ITService, TypeWork, TaskActor, Index, IndexTaskFirst, IndexTaskLast)
+'  'Оценка подрядчика
+'  TypeWork = 511 'Тип работ
+'  TaskActor = "Подрядчик" 'Исполнитель
+'  TaskName = tbFieldPodr 'Имя задачи
+'  TaskHours = tbFieldHoursPodr 'Время задачи
+'  Call AddNewTask(False, FirstTask, StartDate, "", TaskType, TaskName, TaskHours, BiqTaskID, True, ITService, TypeWork, TaskActor, Index, IndexTaskFirst, IndexTaskLast)
   'функция заполнения предшественников
   Call TaskPredInPut(ExcelSheet, StartDate, IndexTaskFirst, IndexTaskLast)
   
@@ -284,7 +284,7 @@ Sub ExtendTasks(IndexTaskFirst, IndexTaskLast)
           HoursDayLoad = GetResLoad(CheckDate, resAss.Resource)
           HoursDayLoadBiq = GetResLoadTask(CheckDate, BiqTask, resAss.ResourceID)
           HoursDayHas = GetResAvailability(CheckDate, resAss.Resource) * 8
-          ' Если в день больше чем возможно
+          'Если в день больше чем возможно
           If HoursDayHas < HoursDayLoad Then
             'Если перегруз можно снять текущей задачей
             If HoursDayLoad - HoursDayHas < HoursDayLoadBiq Then
@@ -306,7 +306,7 @@ Public Function GetResLoadTask(CheckDate, BiqTask, TaskActorId) As Single
   Dim TaskRes As Resource
   Dim resAss  As Assignment
   TimePerest = 0
-  ' Цикл по всем задачам ресурса на обрабатываемый день
+  'Цикл по всем задачам ресурса на обрабатываемый день
   For Each resAss In BiqTask.Assignments
     If resAss.Start <= CheckDate And resAss.Finish >= CheckDate And resAss.ResourceID = TaskActorId Then
       Set TaskTSD = resAss.TimeScaleData(CheckDate, CheckDate, TimescaleUnit:=4)
@@ -469,6 +469,8 @@ Sub FillResources(TaskGroupCK, FuncArea, TaskTeg, SystemCode, IndexTaskFirst, In
               MaxScoreRes = ScoreRes
             End If
           Next Res
+          'Поиск даты на главной задаче
+          BiqTask.Start = SearchMainTaskStartDate(IndexTaskFirst, IndexTaskLast, TaskActorId, BiqTask.Start)
           'Запись в главную задачу
           Call SetTaskResProcent(BiqTask, TaskActorId, Percent)
           Exit For
@@ -489,6 +491,36 @@ Sub FillResources(TaskGroupCK, FuncArea, TaskTeg, SystemCode, IndexTaskFirst, In
   Call SetTimeForTxt(Timer - TimeForSet, "  FillResources: ", False, False)
 
 End Sub
+
+'Поиск Даты на главной задаче
+Public Function SearchMainTaskStartDate(IndexTaskFirst, IndexTaskLast, TaskActorId, StartDate) As Date
+  Dim resAss  As Assignment
+  Dim Res     As Resource
+  Dim assTask As Task
+  For CurrentDate = StartDate to StartDate+120
+    TimePerest = 0
+    For Each Res In ActiveProject.Resources
+      If (Res.ID = TaskActorId) Then
+        For Each resAss In Res.Assignments
+          Set assTask = resAss.Task
+          If assTask.Start <= CurrentDate And assTask.Finish >= CurrentDate Then
+            Set TaskTSD = assTask.TimeScaleData(StartDate, StartDate, TimescaleUnit:=4)
+            For i = 1 To TaskTSD.Count
+              If Not TaskTSD(i).Value = "" Then
+                TimePerest = TimePerest + TaskTSD(i).Value / (60)  'Нагрузку часов в день
+              End If
+            Next i
+          End If
+        Next resAss
+      End If
+    Next Res
+    If (TimePerest < 4) Then
+      SearchMainTaskStartDate = CurrentDate
+      Exit Function
+    End If
+  Next CurrentDate
+
+End Function'SearchMainTaskStartDate
 
 'функция поиска номера главной задачи
 Public Function DefinMainTaskForRes(IndexTaskFirst, IndexTaskLast, TaskActor) As Long
@@ -520,7 +552,7 @@ Sub SetTaskResProcent(BiqTask, TaskActorId, Percent)
       End If
     End If
   Next Ass
-  ' Если не нашли создаем новый
+  'Если не нашли создаем новый
   If TaskActorId <> -1 Then
     BiqTask.Assignments.Add BiqTask.id, TaskActorId, Percent
     If BiqTask.Assignments.Count - 1 > 0 Then
@@ -653,7 +685,7 @@ Public Function DelPred(TaskPredecessors, IndexTaskFirst, IndexTaskLast) As Stri
 
 End Function 'DelPred
 
-' Создание задачи в MS Project
+'Создание задачи в MS Project
 Sub AddNewTask(MainTask, ByRef FirstTask, BiqStartDate, TaskJiraId, TaskType, TaskName, TaskHours, BiqTaskID, ToTaskDays, TaskTypeITService, TaskTypeWork, TaskActor, ByRef Index, ByRef IndexTaskFirst, ByRef IndexTaskLast)
   'Начинается отсчет времени функции
   TimeForSet = Timer
@@ -706,7 +738,7 @@ Sub AddNewTask(MainTask, ByRef FirstTask, BiqStartDate, TaskJiraId, TaskType, Ta
   
 End Sub
 
-' Получаем название полей в MS Project
+'Получаем название полей в MS Project
 Sub InitFieldConst()
 
   projectField_Name = FieldNameToFieldConstant("Название", pjProject)
@@ -734,7 +766,7 @@ Sub InitFieldConst()
 
 End Sub
 
-' Выбор оценки по ЦФТ
+'Выбор оценки по ЦФТ
 Private Sub GetExcelFileCFTButton_Click()
   FileNameCFTTextBox.Text = ShowGetOpenDialog()
   If (TBNumBIQ.Text = "") Then
@@ -742,7 +774,7 @@ Private Sub GetExcelFileCFTButton_Click()
   End If
 End Sub
 
-' Выбор оценки по БИСквиту
+'Выбор оценки по БИСквиту
 Private Sub GetExcelFileBISButton_Click()
   FileNameBISTextBox.Text = ShowGetOpenDialog()
     If (TBNumBIQ.Text = "") Then
@@ -843,7 +875,7 @@ Private Sub DeleteButton_Click()
   
 End Sub
 
-' Растягивание задачи в зависимости от загрузки ресурсов
+'Растягивание задачи в зависимости от загрузки ресурсов
 Sub Perest()
   Dim resAss  As Assignment
   Dim Res     As Resource
