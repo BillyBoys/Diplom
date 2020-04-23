@@ -120,8 +120,8 @@ Private Sub UserForm_Initialize()
   tbFieldHoursTest = 10
   tbFieldHoursPodr = 20
   TBNumBIQ = "BIQ-5257"
-  FileNameCFTTextBox = "C:\Users\Эрнест\Documents\GitHub\Diplom\test\Расшифровка ЭО BIQ5257.xlsx"
-  'FileNameCFTTextBox = "d:\info\Эрнест\Diplom\test\Расшифровка ЭО BIQ5257.xlsx"
+  'FileNameCFTTextBox = "C:\Users\Эрнест\Documents\GitHub\Diplom\test\Расшифровка ЭО BIQ5257.xlsx"
+  FileNameCFTTextBox = "d:\info\Эрнест\Diplom\test\Расшифровка ЭО BIQ5257.xlsx"
   TBNumBIQFDelete = 5257
   
 End Sub
@@ -470,7 +470,8 @@ Sub FillResources(TaskGroupCK, FuncArea, TaskTeg, SystemCode, IndexTaskFirst, In
             End If
           Next Res
           'Поиск даты на главной задаче
-          BiqTask.Start = SearchMainTaskStartDate(IndexTaskFirst, IndexTaskLast, TaskActorId, BiqTask.Start)
+          BiqTask.Start = SearchMainTaskStartDate(IndexTaskFirst, IndexTaskLast, TaskActorId, BiqTask.Start, BiqTask.Finish)
+          MsgBox "Главная задача по " & TaskActor & " " &  BiqTask.Name & " начинается с " & BiqTask.Start
           'Запись в главную задачу
           Call SetTaskResProcent(BiqTask, TaskActorId, Percent)
           Exit For
@@ -493,33 +494,43 @@ Sub FillResources(TaskGroupCK, FuncArea, TaskTeg, SystemCode, IndexTaskFirst, In
 End Sub
 
 'Поиск Даты на главной задаче
-Public Function SearchMainTaskStartDate(IndexTaskFirst, IndexTaskLast, TaskActorId, StartDate) As Date
+Public Function SearchMainTaskStartDate(IndexTaskFirst, IndexTaskLast, TaskActorId, StartDate, FinishDate) As Date
   Dim resAss  As Assignment
   Dim Res     As Resource
   Dim assTask As Task
-  For CurrentDate = StartDate to StartDate+120
-    TimePerest = 0
-    For Each Res In ActiveProject.Resources
-      If (Res.ID = TaskActorId) Then
-        For Each resAss In Res.Assignments
-          Set assTask = resAss.Task
-          If assTask.Start <= CurrentDate And assTask.Finish >= CurrentDate Then
-            Set TaskTSD = assTask.TimeScaleData(StartDate, StartDate, TimescaleUnit:=4)
-            For i = 1 To TaskTSD.Count
-              If Not TaskTSD(i).Value = "" Then
-                TimePerest = TimePerest + TaskTSD(i).Value / (60)  'Нагрузку часов в день
-              End If
-            Next i
-          End If
-        Next resAss
+  'Длительность задачи в большую сторону
+  DurationDays = WorksheetFunction.RoundUp(FinishDate - StartDate,0)
+  'Цикл с начала планирования до плюс 120 дней
+  For CurrentDateNew = StartDate to StartDate + 120
+    'Цикл проверки по длительности
+    For CurrentDate = CurrentDateNew to CurrentDateNew + DurationDays
+      TimePerest = 0
+      For Each Res In ActiveProject.Resources
+        If (Res.ID = TaskActorId) Then
+          For Each resAss In Res.Assignments
+            Set assTask = resAss.Task
+            If assTask.Start <= CurrentDate And assTask.Finish >= CurrentDate Then
+              Set TaskTSD = assTask.TimeScaleData(CurrentDate, CurrentDate, TimescaleUnit:=4)
+              For i = 1 To TaskTSD.Count
+                If Not TaskTSD(i).Value = "" Then
+                  TimePerest = TimePerest + TaskTSD(i).Value / (60)  'Нагрузку часов в день
+                End If
+              Next i
+            End If
+          Next resAss
+        End If
+      Next Res
+      If (TimePerest >= 4) Then
+        Exit For
       End If
-    Next Res
-    If (TimePerest < 4) Then
-      SearchMainTaskStartDate = CurrentDate
-      Exit Function
-    End If
-  Next CurrentDate
-
+      If (CurrentDate = CurrentDateNew + DurationDays) Then
+        SearchMainTaskStartDate = CurrentDateNew
+        Exit Function
+      End If
+    Next CurrentDate
+  Next CurrentDateNew
+  
+  
 End Function'SearchMainTaskStartDate
 
 'функция поиска номера главной задачи
