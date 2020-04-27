@@ -470,7 +470,7 @@ Sub FillResources(TaskGroupCK, FuncArea, TaskTeg, SystemCode, IndexTaskFirst, In
             End If
           Next Res
           'Поиск даты на главной задаче
-          BiqTask.Start = SearchMainTaskStartDate(IndexTaskFirst, IndexTaskLast, TaskActorId, BiqTask.Start, BiqTask.Finish)
+          BiqTask.Start = SearchMainTaskStartDate(IndexTaskFirst, IndexTaskLast, TaskActorId, BiqTask.Start, BiqTask.Finish, Percent)
           MsgBox "Главная задача по " & TaskActor & " " &  BiqTask.Name & " начинается с " & BiqTask.Start
           'Запись в главную задачу
           Call SetTaskResProcent(BiqTask, TaskActorId, Percent)
@@ -482,8 +482,11 @@ Sub FillResources(TaskGroupCK, FuncArea, TaskTeg, SystemCode, IndexTaskFirst, In
     For Each BiqTask In ActiveProject.Tasks
       If (BiqTask.id >= IndexTaskFirst And BiqTask.id <= IndexTaskLast) Then
         If (TaskActor = Left(BiqTask.Assignments(1).ResourceName, Len(BiqTask.Assignments(1).ResourceName) - 1)) Then
-          Percent = BiqTask.Assignments(1).Units
-          Call SetTaskResProcent(BiqTask, TaskActorId, Percent)
+          If(BiqTask.id<>NumMainTask) Then
+            Percent = BiqTask.Assignments(1).Units
+            BiqTask.Start = SearchSideTaskStartDate(IndexTaskFirst, IndexTaskLast, TaskActorId, BiqTask.Start, BiqTask.Finish, Percent)
+            Call SetTaskResProcent(BiqTask, TaskActorId, Percent)
+          End if
         End If
       End If
     Next BiqTask
@@ -494,10 +497,11 @@ Sub FillResources(TaskGroupCK, FuncArea, TaskTeg, SystemCode, IndexTaskFirst, In
 End Sub
 
 'Поиск Даты на главной задаче
-Public Function SearchMainTaskStartDate(IndexTaskFirst, IndexTaskLast, TaskActorId, StartDate, FinishDate) As Date
+Public Function SearchMainTaskStartDate(IndexTaskFirst, IndexTaskLast, TaskActorId, StartDate, FinishDate, Percent) As Date
   Dim resAss  As Assignment
   Dim Res     As Resource
   Dim assTask As Task
+  SearchMainTaskStartDate = StartDate
   'Длительность задачи в большую сторону
   DurationDays = WorksheetFunction.RoundUp(FinishDate - StartDate,0)
   'Цикл с начала планирования до плюс 120 дней
@@ -520,7 +524,7 @@ Public Function SearchMainTaskStartDate(IndexTaskFirst, IndexTaskLast, TaskActor
           Next resAss
         End If
       Next Res
-      If (TimePerest >= 4) Then
+      If TimePerest >= 4 Then
         Exit For
       End If
       If (CurrentDate = CurrentDateNew + DurationDays) Then
@@ -530,8 +534,47 @@ Public Function SearchMainTaskStartDate(IndexTaskFirst, IndexTaskLast, TaskActor
     Next CurrentDate
   Next CurrentDateNew
   
-  
 End Function'SearchMainTaskStartDate
+
+'Поиск даты на побочной задаче
+Public Function SearchSideTaskStartDate(IndexTaskFirst, IndexTaskLast, TaskActorId, StartDate, FinishDate, Percent) As Date
+  Dim resAss  As Assignment
+  Dim Res     As Resource
+  Dim assTask As Task
+  SearchSideTaskStartDate = StartDate
+  'Длительность задачи в большую сторону
+  DurationDays = WorksheetFunction.RoundUp(FinishDate - StartDate,0)
+  'Цикл с начала планирования до плюс 120 дней
+  For CurrentDateNew = StartDate to StartDate + 120
+    'Цикл проверки по длительности
+    For CurrentDate = CurrentDateNew to CurrentDateNew + DurationDays
+      TimePerest = 0
+      For Each Res In ActiveProject.Resources
+        If (Res.ID = TaskActorId) Then
+          For Each resAss In Res.Assignments
+            Set assTask = resAss.Task
+            If assTask.Start <= CurrentDate And assTask.Finish >= CurrentDate Then
+              Set TaskTSD = assTask.TimeScaleData(CurrentDate, CurrentDate, TimescaleUnit:=4)
+              For i = 1 To TaskTSD.Count
+                If Not TaskTSD(i).Value = "" Then
+                  TimePerest = TimePerest + TaskTSD(i).Value / (60)  'Нагрузку часов в день
+                End If
+              Next i
+            End If
+          Next resAss
+        End If
+      Next Res
+      If 8-TimePerest >= Percent*8 Then
+        Exit For
+      End If
+      If (CurrentDate = CurrentDateNew + DurationDays) Then
+        SearchSideTaskStartDate = CurrentDateNew
+        Exit Function
+      End If
+    Next CurrentDate
+  Next CurrentDateNew
+  
+End Function'SearchSideTaskStartDate
 
 'функция поиска номера главной задачи
 Public Function DefinMainTaskForRes(IndexTaskFirst, IndexTaskLast, TaskActor) As Long
