@@ -191,7 +191,7 @@ Public Function CreateTasksByExcel(NumBIQ, StartDate, ExcelFileName) As Boolean
   End If
   
   FirstTask = True
-  For i = 8 To 22
+  For i = 8 To 24
     'Пропускаем строчки Итого и с пустым наименованием
     If Len(Trim(ExcelSheet.Cells(i, 3))) <> 0 Then
       TypeWork = ExcelSheet.Cells(i, 5) 'Тип работ
@@ -470,8 +470,11 @@ Sub FillResources(TaskGroupCK, FuncArea, TaskTeg, SystemCode, IndexTaskFirst, In
             End If
           Next Res
           'Поиск даты на главной задаче
+          CurDate = BiqTask.Start
           BiqTask.Start = SearchMainTaskStartDate(IndexTaskFirst, IndexTaskLast, TaskActorId, BiqTask.Start, BiqTask.Finish, Percent)
-          MsgBox "Главная задача по " & TaskActor & " " &  BiqTask.Name & " начинается с " & BiqTask.Start
+          If CurDate <> BiqTask.Start Then
+            MsgBox "Главная задача по " & TaskActor & " " &  BiqTask.Name & " начинается с " & BiqTask.Start
+          End If
           'Запись в главную задачу
           Call SetTaskResProcent(BiqTask, TaskActorId, Percent)
           Exit For
