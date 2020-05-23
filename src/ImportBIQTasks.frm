@@ -1,10 +1,10 @@
 VERSION 5.00
 Begin {C62A69F0-16DC-11CE-9E98-00AA00574A4F} ImportBIQTasks 
    Caption         =   "Перенос BIQ задач "
-   ClientHeight    =   5625
+   ClientHeight    =   4140
    ClientLeft      =   120
    ClientTop       =   465
-   ClientWidth     =   8220.001
+   ClientWidth     =   11925
    OleObjectBlob   =   "ImportBIQTasks.frx":0000
    StartUpPosition =   1  'CenterOwner
 End
@@ -13,6 +13,7 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
+
 
 
 
@@ -47,6 +48,13 @@ Dim projectField_System1      As Long
 Dim projectField_System2      As Long
 Dim projectField_ImpDate      As Long
 Dim projectField_EmpImpTask   As Long
+
+Private Sub CreateManual_Click()
+
+    
+
+End Sub
+
 ' Кнопка импортировать
 Private Sub ImportButton_Click()
   TimeForSet = Timer
@@ -60,13 +68,13 @@ Private Sub ImportButton_Click()
     End If
   End If
 
-  ' Создаем задачи по оценки БИСквит
-  If Len(Trim(FileNameBISTextBox.Text)) <> 0 Then
-    If CreateTasksByExcel(TBNumBIQ, CDate(tbStartDate.Value), FileNameBISTextBox.Text) = False Then
-      MsgBox "Задача с такой система уже была создана"
-      Exit Sub
-    End If
-  End If
+'  ' Создаем задачи по оценки БИСквит
+'  If Len(Trim(FileNameBISTextBox.Text)) <> 0 Then
+'    If CreateTasksByExcel(TBNumBIQ, CDate(tbStartDate.Value), FileNameBISTextBox.Text) = False Then
+'      MsgBox "Задача с такой система уже была создана"
+'      Exit Sub
+'    End If
+'  End If
   'Запись времени в текстовик
   Call SetTimeForTxt(Timer - TimeForSet, "Конец импорта ", False, True)
   
@@ -120,8 +128,8 @@ Private Sub UserForm_Initialize()
   tbFieldHoursTest = 10
   tbFieldHoursPodr = 20
   TBNumBIQ = "BIQ-5257"
-  'FileNameCFTTextBox = "C:\Users\Эрнест\Documents\GitHub\Diplom\test\Расшифровка ЭО BIQ5257.xlsx"
-  FileNameCFTTextBox = "d:\info\Эрнест\Diplom\test\Расшифровка ЭО BIQ5257.xlsx"
+  FileNameCFTTextBox = "C:\Users\Эрнест\Documents\GitHub\Diplom\test\Расшифровка ЭО BIQ5257.xlsx"
+  'FileNameCFTTextBox = "d:\info\Эрнест\Diplom\test\Расшифровка ЭО BIQ5257.xlsx"
   TBNumBIQFDelete = 5257
   
 End Sub
@@ -473,7 +481,7 @@ Sub FillResources(TaskGroupCK, FuncArea, TaskTeg, SystemCode, IndexTaskFirst, In
           CurDate = BiqTask.Start
           BiqTask.Start = SearchMainTaskStartDate(IndexTaskFirst, IndexTaskLast, TaskActorId, BiqTask.Start, BiqTask.Finish, Percent)
           If CurDate <> BiqTask.Start Then
-            MsgBox "Главная задача по " & TaskActor & " " &  BiqTask.Name & " начинается с " & BiqTask.Start
+            MsgBox "Главная задача по " & TaskActor & " " & BiqTask.name & " начинается с " & BiqTask.Start
           End If
           'Запись в главную задачу
           Call SetTaskResProcent(BiqTask, TaskActorId, Percent)
@@ -485,11 +493,11 @@ Sub FillResources(TaskGroupCK, FuncArea, TaskTeg, SystemCode, IndexTaskFirst, In
     For Each BiqTask In ActiveProject.Tasks
       If (BiqTask.id >= IndexTaskFirst And BiqTask.id <= IndexTaskLast) Then
         If (TaskActor = Left(BiqTask.Assignments(1).ResourceName, Len(BiqTask.Assignments(1).ResourceName) - 1)) Then
-          If(BiqTask.id<>NumMainTask) Then
+          If (BiqTask.id <> NumMainTask) Then
             Percent = BiqTask.Assignments(1).Units
             BiqTask.Start = SearchSideTaskStartDate(IndexTaskFirst, IndexTaskLast, TaskActorId, BiqTask.Start, BiqTask.Finish, Percent)
             Call SetTaskResProcent(BiqTask, TaskActorId, Percent)
-          End if
+          End If
         End If
       End If
     Next BiqTask
@@ -506,14 +514,14 @@ Public Function SearchMainTaskStartDate(IndexTaskFirst, IndexTaskLast, TaskActor
   Dim assTask As Task
   SearchMainTaskStartDate = StartDate
   'Длительность задачи в большую сторону
-  DurationDays = WorksheetFunction.RoundUp(FinishDate - StartDate,0)
+  DurationDays = WorksheetFunction.RoundUp(FinishDate - StartDate, 0)
   'Цикл с начала планирования до плюс 120 дней
-  For CurrentDateNew = StartDate to StartDate + 120
+  For CurrentDateNew = StartDate To StartDate + 120
     'Цикл проверки по длительности
-    For CurrentDate = CurrentDateNew to CurrentDateNew + DurationDays
+    For CurrentDate = CurrentDateNew To CurrentDateNew + DurationDays
       TimePerest = 0
       For Each Res In ActiveProject.Resources
-        If (Res.ID = TaskActorId) Then
+        If (Res.id = TaskActorId) Then
           For Each resAss In Res.Assignments
             Set assTask = resAss.Task
             If assTask.Start <= CurrentDate And assTask.Finish >= CurrentDate Then
@@ -537,7 +545,7 @@ Public Function SearchMainTaskStartDate(IndexTaskFirst, IndexTaskLast, TaskActor
     Next CurrentDate
   Next CurrentDateNew
   
-End Function'SearchMainTaskStartDate
+End Function 'SearchMainTaskStartDate
 
 'Поиск даты на побочной задаче
 Public Function SearchSideTaskStartDate(IndexTaskFirst, IndexTaskLast, TaskActorId, StartDate, FinishDate, Percent) As Date
@@ -546,14 +554,14 @@ Public Function SearchSideTaskStartDate(IndexTaskFirst, IndexTaskLast, TaskActor
   Dim assTask As Task
   SearchSideTaskStartDate = StartDate
   'Длительность задачи в большую сторону
-  DurationDays = WorksheetFunction.RoundUp(FinishDate - StartDate,0)
+  DurationDays = WorksheetFunction.RoundUp(FinishDate - StartDate, 0)
   'Цикл с начала планирования до плюс 120 дней
-  For CurrentDateNew = StartDate to StartDate + 120
+  For CurrentDateNew = StartDate To StartDate + 120
     'Цикл проверки по длительности
-    For CurrentDate = CurrentDateNew to CurrentDateNew + DurationDays
+    For CurrentDate = CurrentDateNew To CurrentDateNew + DurationDays
       TimePerest = 0
       For Each Res In ActiveProject.Resources
-        If (Res.ID = TaskActorId) Then
+        If (Res.id = TaskActorId) Then
           For Each resAss In Res.Assignments
             Set assTask = resAss.Task
             If assTask.Start <= CurrentDate And assTask.Finish >= CurrentDate Then
@@ -567,7 +575,7 @@ Public Function SearchSideTaskStartDate(IndexTaskFirst, IndexTaskLast, TaskActor
           Next resAss
         End If
       Next Res
-      If 8-TimePerest >= Percent*8 Then
+      If 8 - TimePerest >= Percent * 8 Then
         Exit For
       End If
       If (CurrentDate = CurrentDateNew + DurationDays) Then
@@ -577,7 +585,7 @@ Public Function SearchSideTaskStartDate(IndexTaskFirst, IndexTaskLast, TaskActor
     Next CurrentDate
   Next CurrentDateNew
   
-End Function'SearchSideTaskStartDate
+End Function 'SearchSideTaskStartDate
 
 'функция поиска номера главной задачи
 Public Function DefinMainTaskForRes(IndexTaskFirst, IndexTaskLast, TaskActor) As Long
