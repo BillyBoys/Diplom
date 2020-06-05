@@ -1,7 +1,7 @@
 VERSION 5.00
 Begin {C62A69F0-16DC-11CE-9E98-00AA00574A4F} ImportBIQTasks 
    Caption         =   "Перенос BIQ задач "
-   ClientHeight    =   4140
+   ClientHeight    =   8790.001
    ClientLeft      =   120
    ClientTop       =   465
    ClientWidth     =   11925
@@ -13,6 +13,12 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
+
+
+
+
+
+
 
 
 
@@ -52,236 +58,247 @@ Dim projectField_EmpImpTask   As Long
 
 'Кнопка создания листа справочника для Project
 Private Sub CreateManual_Click()
-  
-  If Len(Trim(FileNameManTextBox.Text)) <> 0 Then
-    PathToExc = FileNameManTextBox.Text
-    Set xlobject = CreateObject("Excel.Application")
-    xlobject.Workbooks.Open PathToExc
-    If xlobject.ActiveWorkbook Is Nothing Then
-      xlobject.Quit 'Закрытие Excel файла
-      MsgBox "Некоректный путь к экспресс оценке задачи"
-      Exit Sub
+  For Index = 0 To Me.FileNameExcelWithOut.ListCount - 1
+    If Len(Trim(Me.FileNameExcelWithOut.List(Index))) <> 0 Then
+      FillDescExcel (Index)
+    Else
+      MsgBox "Введите путь к экспресс оценке задачи"
     End If
-    xlobject.DisplayAlerts = False
-    'Создание нового листа
-    xlobject.ActiveWorkbook.Sheets.Add.name = "Справочник для Project"
-    xlobject.ActiveWorkbook.Sheets(1).Move After:=xlobject.ActiveWorkbook.Sheets(4)
-    Set ExcelSheet = xlobject.ActiveWorkbook.Sheets(4)
-    'Запись в лист
-    ExcelSheet.Cells(1, 1).Value = "Группа ЦК"
-    ExcelSheet.Cells(2, 1).Value = "Функциональная область"
-    ExcelSheet.Cells(3, 1).Value = "Тег"
-    ExcelSheet.Cells(1, 2).Formula = "=Оценка!C6"
-    ExcelSheet.Cells(1, 2).Interior.Color = RGB(220, 230, 241)
-    ExcelSheet.Cells(2, 2).Formula = "=Оценка!C7"
-    ExcelSheet.Cells(2, 2).Interior.Color = RGB(220, 230, 241)
-    ExcelSheet.Cells(3, 2).Value = " "
-    ExcelSheet.Cells(3, 2).Interior.Color = RGB(220, 230, 241)
-    ExcelSheet.Cells(1, 3).Formula = "=Оценка!C1"
-    ExcelSheet.Cells(1, 3).Interior.Color = RGB(220, 230, 241)
-    ExcelSheet.Cells(2, 3).Formula = "=Оценка!C2"
-    ExcelSheet.Cells(2, 3).Interior.Color = RGB(220, 230, 241)
-    ExcelSheet.Cells(2, 4).Value = "JIRACFT"
-    ExcelSheet.Cells(2, 4).Interior.Color = RGB(220, 230, 241)
-    ExcelSheet.Cells(2, 5).Value = "25"
-    ExcelSheet.Cells(2, 5).Interior.Color = RGB(220, 230, 241)
-    ExcelSheet.Cells(6, 1).Value = "Таблица задач"
-    ExcelSheet.Cells(7, 1).Value = "Номер задачи"
-    'Формат ячеек
-    ExcelSheet.Range("A7:I24").Borders.LineStyle = True
-    ExcelSheet.Cells(1, 3).WrapText = True
-    For i = 1 To 17
-      ExcelSheet.Cells(7 + i, 1).Value = i - 1
-    Next i
-    ExcelSheet.Range("A7:I24").Interior.Color = RGB(220, 230, 241)
-    ExcelSheet.Range("A7:I7").Interior.Color = RGB(79, 129, 189)
-    ExcelSheet.Columns(1).ColumnWidth = 17
-    ExcelSheet.Columns(2).ColumnWidth = 60
-    ExcelSheet.Columns(3).ColumnWidth = 36
-    ExcelSheet.Columns(4).ColumnWidth = 20
-    ExcelSheet.Columns(5).ColumnWidth = 15
-    ExcelSheet.Columns(6).ColumnWidth = 15
-    ExcelSheet.Columns(7).ColumnWidth = 20
-    ExcelSheet.Columns(8).ColumnWidth = 20
-    ExcelSheet.Columns(9).ColumnWidth = 15
-    ExcelSheet.Columns(11).ColumnWidth = 20
-    ExcelSheet.Columns(12).ColumnWidth = 15
-    ExcelSheet.Columns(13).ColumnWidth = 15
-    'Столбец Наименование работы в оценке
-    ExcelSheet.Cells(7, 2).Value = "Наименование работы в оценке"
-    ExcelSheet.Cells(8, 2).Value = "Поддержка написания и согласование (БТ, АВ, ТВИС и т.п.),  в.т.ч. регист-я запросов, проведение оценки"
-    ExcelSheet.Cells(9, 2).Value = "Разработка ТВИСа (в т.ч. Xsd-схем)"
-    ExcelSheet.Cells(10, 2).Value = "Согласование ТВИС"
-    ExcelSheet.Cells(11, 2).Value = "Разработка ФТ (+ xsd при необходимости)"
-    ExcelSheet.Cells(12, 2).Value = "Согласование ФТ"
-    ExcelSheet.Cells(13, 2).Value = "Поддержка написания спецификации (СТП)"
-    ExcelSheet.Cells(14, 2).Value = "Согласование спецификации"
-    ExcelSheet.Cells(15, 2).Value = "Поддержка этапа разработки(подрядчик + собственными силами)"
-    ExcelSheet.Cells(16, 2).Value = "Поддержка ПСИ (в т.ч. в случае проведения ПСИ)"
-    ExcelSheet.Cells(17, 2).Value = "Управление задачей, Согласование ФТ на смежные системы"
-    ExcelSheet.Cells(18, 2).Value = "Тиражирование"
-    ExcelSheet.Cells(19, 2).Value = "Поддержка до окончания ПСИ (исправление ошибок, консультации, сборка пакета на пром, "
-    ExcelSheet.Cells(20, 2).Value = "Поддержка написания и согласование документации(ТВИС,ФТ)"
-    ExcelSheet.Cells(21, 2).Value = "Разработка (включает в себя разработку и сборку первого тестового пакета)"
-    ExcelSheet.Cells(22, 2).Value = "Поддержка предварительного тестирования (в т.ч. интеграционного тестирования)"
-    ExcelSheet.Cells(23, 2).Value = "Оценка тестировщика"
-    ExcelSheet.Cells(24, 2).Value = "Оценка подрядчика"
-    'Столбец Наименование работы в MS Project
-    ExcelSheet.Cells(7, 3).Value = "Наименование работы в MS Project"
-    ExcelSheet.Cells(8, 3).Value = "Поддержка написания и согласование"
-    ExcelSheet.Cells(9, 3).Value = "Разработка ТВИСа"
-    ExcelSheet.Cells(10, 3).Value = "Согласование ТВИС"
-    ExcelSheet.Cells(11, 3).Value = "Разработка ФТ"
-    ExcelSheet.Cells(12, 3).Value = "Согласование ФТ"
-    ExcelSheet.Cells(13, 3).Value = "Поддержка написания спецификации"
-    ExcelSheet.Cells(14, 3).Value = "Согласование спецификации"
-    ExcelSheet.Cells(15, 3).Value = "Поддержка этапа разработки"
-    ExcelSheet.Cells(16, 3).Value = "Поддержка ПСИ"
-    ExcelSheet.Cells(17, 3).Value = "Управление задачей"
-    ExcelSheet.Cells(18, 3).Value = "Тиражирование"
-    ExcelSheet.Cells(19, 3).Value = "Поддержка до окончания ПСИ"
-    ExcelSheet.Cells(20, 3).Value = "Поддержка написания и согласование документации"
-    ExcelSheet.Cells(21, 3).Value = "Собственная разработка"
-    ExcelSheet.Cells(22, 3).Value = "Поддержка предварительного тестирования"
-    ExcelSheet.Cells(23, 3).Value = "Оценка тестировщика"
-    ExcelSheet.Cells(24, 3).Value = "Оценка подрядчика"
-    'Столбец Предшественники
-    ExcelSheet.Cells(7, 4).Value = "Предшественники"
-    ExcelSheet.Cells(8, 4).Value = ""
-    ExcelSheet.Cells(9, 4).Value = "0"
-    ExcelSheet.Cells(10, 4).Value = "1"
-    ExcelSheet.Cells(11, 4).Value = "2"
-    ExcelSheet.Cells(12, 4).Value = "3"
-    ExcelSheet.Cells(13, 4).Value = "4"
-    ExcelSheet.Cells(14, 4).Value = "5"
-    ExcelSheet.Cells(15, 4).Value = "6;14#НО"
-    ExcelSheet.Cells(16, 4).Value = "14"
-    ExcelSheet.Cells(17, 4).Value = "'10#ОО;0#НН"
-    ExcelSheet.Cells(18, 4).Value = "8"
-    ExcelSheet.Cells(19, 4).Value = "13;10#ОО"
-    ExcelSheet.Cells(20, 4).Value = "6#ОО;0#НН"
-    ExcelSheet.Cells(21, 4).Value = "6"
-    ExcelSheet.Cells(22, 4).Value = "13"
-    ExcelSheet.Cells(23, 4).Value = "13;16"
-    ExcelSheet.Cells(24, 4).Value = "6"
-    'Столбец Тип работы
-    ExcelSheet.Cells(7, 5).Value = "Тип работы"
-    ExcelSheet.Cells(8, 5).Value = "495"
-    ExcelSheet.Cells(9, 5).Value = "496"
-    ExcelSheet.Cells(10, 5).Value = "497"
-    ExcelSheet.Cells(11, 5).Value = "498"
-    ExcelSheet.Cells(12, 5).Value = "499"
-    ExcelSheet.Cells(13, 5).Value = "500"
-    ExcelSheet.Cells(14, 5).Value = "501"
-    ExcelSheet.Cells(15, 5).Value = "502"
-    ExcelSheet.Cells(16, 5).Value = "504"
-    ExcelSheet.Cells(17, 5).Value = "505"
-    ExcelSheet.Cells(18, 5).Value = "506"
-    ExcelSheet.Cells(19, 5).Value = "510"
-    ExcelSheet.Cells(20, 5).Value = "508"
-    ExcelSheet.Cells(21, 5).Value = "509"
-    ExcelSheet.Cells(22, 5).Value = "503"
-    ExcelSheet.Cells(23, 5).Value = "512"
-    ExcelSheet.Cells(24, 5).Value = "511"
-    'Столбец Исполнитель
-    ExcelSheet.Cells(7, 6).Value = "Исполнитель"
-    ExcelSheet.Cells(8, 6).Value = "Аналитик1[50 %]"
-    ExcelSheet.Cells(9, 6).Value = "Аналитик1[20 %]"
-    ExcelSheet.Cells(10, 6).Value = "Аналитик1[20 %]"
-    ExcelSheet.Cells(11, 6).Value = "Аналитик1[20 %]"
-    ExcelSheet.Cells(12, 6).Value = "Аналитик1[20 %]"
-    ExcelSheet.Cells(13, 6).Value = "Аналитик1[20 %]"
-    ExcelSheet.Cells(14, 6).Value = "Аналитик1[20 %]"
-    ExcelSheet.Cells(15, 6).Value = "Аналитик1[20 %]"
-    ExcelSheet.Cells(16, 6).Value = "Аналитик1[20 %]"
-    ExcelSheet.Cells(17, 6).Value = "Аналитик1[20 %]"
-    ExcelSheet.Cells(18, 6).Value = "Аналитик1[20 %]"
-    ExcelSheet.Cells(19, 6).Value = "Аналитик1[20 %]"
-    ExcelSheet.Cells(20, 6).Value = "Аналитик1[20 %]"
-    ExcelSheet.Cells(21, 6).Value = "Аналитик1[50 %]"
-    ExcelSheet.Cells(22, 6).Value = "Аналитик1[20 %]"
-    ExcelSheet.Cells(23, 6).Value = "Аналитик1[50 %]"
-    ExcelSheet.Cells(24, 6).Value = "Аналитик1[50 %]"
-    'Столбец Часы
-    ExcelSheet.Cells(7, 7).Value = "Часы"
-    ExcelSheet.Cells(8, 7).Formula = "=Оценка!D11"
-    ExcelSheet.Cells(9, 7).Formula = "=Оценка!D12"
-    ExcelSheet.Cells(10, 7).Formula = "=Оценка!D13"
-    ExcelSheet.Cells(11, 7).Formula = "=Оценка!D14"
-    ExcelSheet.Cells(12, 7).Formula = "=Оценка!D15"
-    ExcelSheet.Cells(13, 7).Formula = "=Оценка!D16"
-    ExcelSheet.Cells(14, 7).Formula = "=Оценка!D17"
-    ExcelSheet.Cells(15, 7).Formula = "=Оценка!D18"
-    ExcelSheet.Cells(16, 7).Formula = "=Оценка!D20"
-    ExcelSheet.Cells(17, 7).Formula = "=Оценка!D21"
-    ExcelSheet.Cells(18, 7).Formula = "=Оценка!D22"
-    ExcelSheet.Cells(19, 7).Formula = "=Оценка!D26"
-    ExcelSheet.Cells(20, 7).Formula = "=Оценка!D24"
-    ExcelSheet.Cells(21, 7).Formula = "=Оценка!D25"
-    ExcelSheet.Cells(22, 7).Formula = "=Оценка!D19"
-    ExcelSheet.Cells(23, 7).Value = "30"
-    ExcelSheet.Cells(24, 7).Formula = "=Оценка!D29"
-    'Столбец Проценты
-    ExcelSheet.Cells(7, 8).Value = "Проценты"
-    ExcelSheet.Cells(8, 8).Value = "50"
-    ExcelSheet.Cells(9, 8).Value = "20"
-    ExcelSheet.Cells(10, 8).Value = "20"
-    ExcelSheet.Cells(11, 8).Value = "20"
-    ExcelSheet.Cells(12, 8).Value = "20"
-    ExcelSheet.Cells(13, 8).Value = "20"
-    ExcelSheet.Cells(14, 8).Value = "20"
-    ExcelSheet.Cells(15, 8).Value = "20"
-    ExcelSheet.Cells(16, 8).Value = "20"
-    ExcelSheet.Cells(17, 8).Value = "20"
-    ExcelSheet.Cells(18, 8).Value = "20"
-    ExcelSheet.Cells(19, 8).Value = "20"
-    ExcelSheet.Cells(20, 8).Value = "20"
-    ExcelSheet.Cells(21, 8).Value = "50"
-    ExcelSheet.Cells(22, 8).Value = "20"
-    ExcelSheet.Cells(23, 8).Value = "50"
-    ExcelSheet.Cells(24, 8).Value = "50"
-    'Столбец Исполнитель
-    ExcelSheet.Cells(7, 9).Value = "Исполнитель"
-    ExcelSheet.Cells(8, 9).Value = "Аналитик1"
-    ExcelSheet.Cells(9, 9).Value = "Аналитик1"
-    ExcelSheet.Cells(10, 9).Value = "Аналитик1"
-    ExcelSheet.Cells(11, 9).Value = "Аналитик1"
-    ExcelSheet.Cells(12, 9).Value = "Аналитик1"
-    ExcelSheet.Cells(13, 9).Value = "Аналитик1"
-    ExcelSheet.Cells(14, 9).Value = "Аналитик1"
-    ExcelSheet.Cells(15, 9).Value = "Аналитик1"
-    ExcelSheet.Cells(16, 9).Value = "Аналитик1"
-    ExcelSheet.Cells(17, 9).Value = "Аналитик1"
-    ExcelSheet.Cells(18, 9).Value = "Аналитик1"
-    ExcelSheet.Cells(19, 9).Value = "Аналитик1"
-    ExcelSheet.Cells(20, 9).Value = "Разработчик1"
-    ExcelSheet.Cells(21, 9).Value = "Разработчик1"
-    ExcelSheet.Cells(22, 9).Value = "Разработчик1"
-    ExcelSheet.Cells(23, 9).Value = "Тестировщик1"
-    ExcelSheet.Cells(24, 9).Value = "Подрядчик"
-    'Таблица скоринга
-    ExcelSheet.Cells(6, 11).Value = "Таблица скоринга"
-    ExcelSheet.Cells(7, 11).Value = "Группа ЦК"
-    ExcelSheet.Cells(7, 12).Value = "Функциональная область"
-    ExcelSheet.Cells(7, 13).Value = "Тег"
-    ExcelSheet.Cells(8, 11).Value = "20"
-    ExcelSheet.Cells(8, 12).Value = "20"
-    ExcelSheet.Cells(8, 13).Value = "20"
-
-    xlobject.ActiveWorkbook.Save
-    xlobject.DisplayAlerts = True
-    xlobject.ActiveWorkbook.Close True
-    xlobject.Quit 'Закрытие Excel файла
-  Else
-    MsgBox "Введите путь к экспресс оценке задачи"
-  End If
+  Next Index
  'If MsgBox("Открыть Экспресс оценку?", vbYesNo, "Открытие") = vbYes Then
- '  PathToExc = FileNameManTextBox.Text
+ '  PathToExc = FileNameExcelWithOut.Text
  '  Set xlobject = CreateObject("Excel.Application")
  '  xlobject.Workbooks.Open PathToExc
  '  xlobject.Visible= True 'Закрытие Excel файла
  'End If
- FileNameCFTTextBox = FileNameManTextBox
+End Sub
+
+Sub FillDescExcel(Index)
+  PathToExc = Me.FileNameExcelWithOut.List(Index)
+  Set xlobject = CreateObject("Excel.Application")
+  xlobject.Workbooks.Open PathToExc
+  If xlobject.ActiveWorkbook Is Nothing Then
+    xlobject.Quit 'Закрытие Excel файла
+    MsgBox "Некоректный путь к экспресс оценке задачи"
+    Exit Sub
+  End If
+  xlobject.DisplayAlerts = False
+  'Создание нового листа
+  On Error Resume Next
+  Set whst = xlobject.ActiveWorkbook.Sheets("Справочник для Project")
+  If Err.Number = 0 Then
+    MsgBox "В оценке " & PathToExc & " есть справочник"
+    xlobject.Quit 'Закрытие Excel файла
+    Exit Sub
+  End If
+  xlobject.ActiveWorkbook.Sheets.Add.name = "Справочник для Project"
+  xlobject.ActiveWorkbook.Sheets("Справочник для Project").Move After:=xlobject.ActiveWorkbook.Sheets(4)
+  Set ExcelSheet = xlobject.ActiveWorkbook.Sheets("Справочник для Project")
+  'Запись в лист
+  ExcelSheet.Cells(1, 1).Value = "Группа ЦК"
+  ExcelSheet.Cells(2, 1).Value = "Функциональная область"
+  ExcelSheet.Cells(3, 1).Value = "Тег"
+  ExcelSheet.Cells(1, 2).Formula = "=Оценка!C6"
+  ExcelSheet.Cells(1, 2).Interior.Color = RGB(220, 230, 241)
+  ExcelSheet.Cells(2, 2).Formula = "=Оценка!C7"
+  ExcelSheet.Cells(2, 2).Interior.Color = RGB(220, 230, 241)
+  ExcelSheet.Cells(3, 2).Value = " "
+  ExcelSheet.Cells(3, 2).Interior.Color = RGB(220, 230, 241)
+  ExcelSheet.Cells(1, 3).Formula = "=Оценка!C1"
+  ExcelSheet.Cells(1, 3).Interior.Color = RGB(220, 230, 241)
+  ExcelSheet.Cells(2, 3).Formula = "=Оценка!C2"
+  ExcelSheet.Cells(2, 3).Interior.Color = RGB(220, 230, 241)
+  ExcelSheet.Cells(2, 4).Value = "JIRACFT"
+  ExcelSheet.Cells(2, 4).Interior.Color = RGB(220, 230, 241)
+  ExcelSheet.Cells(2, 5).Value = "25"
+  ExcelSheet.Cells(2, 5).Interior.Color = RGB(220, 230, 241)
+  ExcelSheet.Cells(6, 1).Value = "Таблица задач"
+  ExcelSheet.Cells(7, 1).Value = "Номер задачи"
+  'Формат ячеек
+  ExcelSheet.Range("A7:I24").Borders.LineStyle = True
+  ExcelSheet.Cells(1, 3).WrapText = True
+  For j = 1 To 17
+    ExcelSheet.Cells(7 + j, 1).Value = j - 1
+  Next j
+  ExcelSheet.Range("A7:I24").Interior.Color = RGB(220, 230, 241)
+  ExcelSheet.Range("A7:I7").Interior.Color = RGB(79, 129, 189)
+  ExcelSheet.Columns(1).ColumnWidth = 17
+  ExcelSheet.Columns(2).ColumnWidth = 60
+  ExcelSheet.Columns(3).ColumnWidth = 36
+  ExcelSheet.Columns(4).ColumnWidth = 20
+  ExcelSheet.Columns(5).ColumnWidth = 15
+  ExcelSheet.Columns(6).ColumnWidth = 15
+  ExcelSheet.Columns(7).ColumnWidth = 20
+  ExcelSheet.Columns(8).ColumnWidth = 20
+  ExcelSheet.Columns(9).ColumnWidth = 15
+  ExcelSheet.Columns(11).ColumnWidth = 20
+  ExcelSheet.Columns(12).ColumnWidth = 15
+  ExcelSheet.Columns(13).ColumnWidth = 15
+  'Столбец Наименование работы в оценке
+  ExcelSheet.Cells(7, 2).Value = "Наименование работы в оценке"
+  ExcelSheet.Cells(8, 2).Value = "Поддержка написания и согласование (БТ, АВ, ТВИС и т.п.),  в.т.ч. регист-я запросов, проведение оценки"
+  ExcelSheet.Cells(9, 2).Value = "Разработка ТВИСа (в т.ч. Xsd-схем)"
+  ExcelSheet.Cells(10, 2).Value = "Согласование ТВИС"
+  ExcelSheet.Cells(11, 2).Value = "Разработка ФТ (+ xsd при необходимости)"
+  ExcelSheet.Cells(12, 2).Value = "Согласование ФТ"
+  ExcelSheet.Cells(13, 2).Value = "Поддержка написания спецификации (СТП)"
+  ExcelSheet.Cells(14, 2).Value = "Согласование спецификации"
+  ExcelSheet.Cells(15, 2).Value = "Поддержка этапа разработки(подрядчик + собственными силами)"
+  ExcelSheet.Cells(16, 2).Value = "Поддержка ПСИ (в т.ч. в случае проведения ПСИ)"
+  ExcelSheet.Cells(17, 2).Value = "Управление задачей, Согласование ФТ на смежные системы"
+  ExcelSheet.Cells(18, 2).Value = "Тиражирование"
+  ExcelSheet.Cells(19, 2).Value = "Поддержка до окончания ПСИ (исправление ошибок, консультации, сборка пакета на пром, "
+  ExcelSheet.Cells(20, 2).Value = "Поддержка написания и согласование документации(ТВИС,ФТ)"
+  ExcelSheet.Cells(21, 2).Value = "Разработка (включает в себя разработку и сборку первого тестового пакета)"
+  ExcelSheet.Cells(22, 2).Value = "Поддержка предварительного тестирования (в т.ч. интеграционного тестирования)"
+  ExcelSheet.Cells(23, 2).Value = "Оценка тестировщика"
+  ExcelSheet.Cells(24, 2).Value = "Оценка подрядчика"
+  'Столбец Наименование работы в MS Project
+  ExcelSheet.Cells(7, 3).Value = "Наименование работы в MS Project"
+  ExcelSheet.Cells(8, 3).Value = "Поддержка написания и согласование"
+  ExcelSheet.Cells(9, 3).Value = "Разработка ТВИСа"
+  ExcelSheet.Cells(10, 3).Value = "Согласование ТВИС"
+  ExcelSheet.Cells(11, 3).Value = "Разработка ФТ"
+  ExcelSheet.Cells(12, 3).Value = "Согласование ФТ"
+  ExcelSheet.Cells(13, 3).Value = "Поддержка написания спецификации"
+  ExcelSheet.Cells(14, 3).Value = "Согласование спецификации"
+  ExcelSheet.Cells(15, 3).Value = "Поддержка этапа разработки"
+  ExcelSheet.Cells(16, 3).Value = "Поддержка ПСИ"
+  ExcelSheet.Cells(17, 3).Value = "Управление задачей"
+  ExcelSheet.Cells(18, 3).Value = "Тиражирование"
+  ExcelSheet.Cells(19, 3).Value = "Поддержка до окончания ПСИ"
+  ExcelSheet.Cells(20, 3).Value = "Поддержка написания и согласование документации"
+  ExcelSheet.Cells(21, 3).Value = "Собственная разработка"
+  ExcelSheet.Cells(22, 3).Value = "Поддержка предварительного тестирования"
+  ExcelSheet.Cells(23, 3).Value = "Оценка тестировщика"
+  ExcelSheet.Cells(24, 3).Value = "Оценка подрядчика"
+  'Столбец Предшественники
+  ExcelSheet.Cells(7, 4).Value = "Предшественники"
+  ExcelSheet.Cells(8, 4).Value = ""
+  ExcelSheet.Cells(9, 4).Value = "0"
+  ExcelSheet.Cells(10, 4).Value = "1"
+  ExcelSheet.Cells(11, 4).Value = "2"
+  ExcelSheet.Cells(12, 4).Value = "3"
+  ExcelSheet.Cells(13, 4).Value = "4"
+  ExcelSheet.Cells(14, 4).Value = "5"
+  ExcelSheet.Cells(15, 4).Value = "6;14#НО"
+  ExcelSheet.Cells(16, 4).Value = "14"
+  ExcelSheet.Cells(17, 4).Value = "'10#ОО;0#НН"
+  ExcelSheet.Cells(18, 4).Value = "8"
+  ExcelSheet.Cells(19, 4).Value = "13;10#ОО"
+  ExcelSheet.Cells(20, 4).Value = "6#ОО;0#НН"
+  ExcelSheet.Cells(21, 4).Value = "6"
+  ExcelSheet.Cells(22, 4).Value = "13"
+  ExcelSheet.Cells(23, 4).Value = "13;16"
+  ExcelSheet.Cells(24, 4).Value = "6"
+  'Столбец Тип работы
+  ExcelSheet.Cells(7, 5).Value = "Тип работы"
+  ExcelSheet.Cells(8, 5).Value = "495"
+  ExcelSheet.Cells(9, 5).Value = "496"
+  ExcelSheet.Cells(10, 5).Value = "497"
+  ExcelSheet.Cells(11, 5).Value = "498"
+  ExcelSheet.Cells(12, 5).Value = "499"
+  ExcelSheet.Cells(13, 5).Value = "500"
+  ExcelSheet.Cells(14, 5).Value = "501"
+  ExcelSheet.Cells(15, 5).Value = "502"
+  ExcelSheet.Cells(16, 5).Value = "504"
+  ExcelSheet.Cells(17, 5).Value = "505"
+  ExcelSheet.Cells(18, 5).Value = "506"
+  ExcelSheet.Cells(19, 5).Value = "510"
+  ExcelSheet.Cells(20, 5).Value = "508"
+  ExcelSheet.Cells(21, 5).Value = "509"
+  ExcelSheet.Cells(22, 5).Value = "503"
+  ExcelSheet.Cells(23, 5).Value = "512"
+  ExcelSheet.Cells(24, 5).Value = "511"
+  'Столбец Исполнитель
+  ExcelSheet.Cells(7, 6).FormulaR1C1 = "Исполнитель"
+  ExcelSheet.Cells(8, 6).FormulaR1C1 = "=IF(R[0]C[2]="""",R[0]C[3],CONCATENATE(R[0]C[3],""["",R[0]C[2],"" %]""))"
+  ExcelSheet.Cells(9, 6).FormulaR1C1 = "=IF(R[0]C[2]="""",R[0]C[3],CONCATENATE(R[0]C[3],""["",R[0]C[2],"" %]""))"
+  ExcelSheet.Cells(10, 6).FormulaR1C1 = "=IF(R[0]C[2]="""",R[0]C[3],CONCATENATE(R[0]C[3],""["",R[0]C[2],"" %]""))"
+  ExcelSheet.Cells(11, 6).FormulaR1C1 = "=IF(R[0]C[2]="""",R[0]C[3],CONCATENATE(R[0]C[3],""["",R[0]C[2],"" %]""))"
+  ExcelSheet.Cells(12, 6).FormulaR1C1 = "=IF(R[0]C[2]="""",R[0]C[3],CONCATENATE(R[0]C[3],""["",R[0]C[2],"" %]""))"
+  ExcelSheet.Cells(13, 6).FormulaR1C1 = "=IF(R[0]C[2]="""",R[0]C[3],CONCATENATE(R[0]C[3],""["",R[0]C[2],"" %]""))"
+  ExcelSheet.Cells(14, 6).FormulaR1C1 = "=IF(R[0]C[2]="""",R[0]C[3],CONCATENATE(R[0]C[3],""["",R[0]C[2],"" %]""))"
+  ExcelSheet.Cells(15, 6).FormulaR1C1 = "=IF(R[0]C[2]="""",R[0]C[3],CONCATENATE(R[0]C[3],""["",R[0]C[2],"" %]""))"
+  ExcelSheet.Cells(16, 6).FormulaR1C1 = "=IF(R[0]C[2]="""",R[0]C[3],CONCATENATE(R[0]C[3],""["",R[0]C[2],"" %]""))"
+  ExcelSheet.Cells(17, 6).FormulaR1C1 = "=IF(R[0]C[2]="""",R[0]C[3],CONCATENATE(R[0]C[3],""["",R[0]C[2],"" %]""))"
+  ExcelSheet.Cells(18, 6).FormulaR1C1 = "=IF(R[0]C[2]="""",R[0]C[3],CONCATENATE(R[0]C[3],""["",R[0]C[2],"" %]""))"
+  ExcelSheet.Cells(19, 6).FormulaR1C1 = "=IF(R[0]C[2]="""",R[0]C[3],CONCATENATE(R[0]C[3],""["",R[0]C[2],"" %]""))"
+  ExcelSheet.Cells(20, 6).FormulaR1C1 = "=IF(R[0]C[2]="""",R[0]C[3],CONCATENATE(R[0]C[3],""["",R[0]C[2],"" %]""))"
+  ExcelSheet.Cells(21, 6).FormulaR1C1 = "=IF(R[0]C[2]="""",R[0]C[3],CONCATENATE(R[0]C[3],""["",R[0]C[2],"" %]""))"
+  ExcelSheet.Cells(22, 6).FormulaR1C1 = "=IF(R[0]C[2]="""",R[0]C[3],CONCATENATE(R[0]C[3],""["",R[0]C[2],"" %]""))"
+  ExcelSheet.Cells(23, 6).FormulaR1C1 = "=IF(R[0]C[2]="""",R[0]C[3],CONCATENATE(R[0]C[3],""["",R[0]C[2],"" %]""))"
+  ExcelSheet.Cells(24, 6).FormulaR1C1 = "=IF(R[0]C[2]="""",R[0]C[3],CONCATENATE(R[0]C[3],""["",R[0]C[2],"" %]""))"
+  'Столбец Часы
+  ExcelSheet.Cells(7, 7).Value = "Часы"
+  ExcelSheet.Cells(8, 7).Formula = "=Оценка!D11"
+  ExcelSheet.Cells(9, 7).Formula = "=Оценка!D12"
+  ExcelSheet.Cells(10, 7).Formula = "=Оценка!D13"
+  ExcelSheet.Cells(11, 7).Formula = "=Оценка!D14"
+  ExcelSheet.Cells(12, 7).Formula = "=Оценка!D15"
+  ExcelSheet.Cells(13, 7).Formula = "=Оценка!D16"
+  ExcelSheet.Cells(14, 7).Formula = "=Оценка!D17"
+  ExcelSheet.Cells(15, 7).Formula = "=Оценка!D18"
+  ExcelSheet.Cells(16, 7).Formula = "=Оценка!D20"
+  ExcelSheet.Cells(17, 7).Formula = "=Оценка!D21"
+  ExcelSheet.Cells(18, 7).Formula = "=Оценка!D22"
+  ExcelSheet.Cells(19, 7).Formula = "=Оценка!D26"
+  ExcelSheet.Cells(20, 7).Formula = "=Оценка!D24"
+  ExcelSheet.Cells(21, 7).Formula = "=Оценка!D25"
+  ExcelSheet.Cells(22, 7).Formula = "=Оценка!D19"
+  ExcelSheet.Cells(23, 7).Value = "30"
+  ExcelSheet.Cells(24, 7).Formula = "=Оценка!D29"
+  'Столбец Проценты
+  ExcelSheet.Cells(7, 8).Value = "Проценты"
+  ExcelSheet.Cells(8, 8).Value = "50"
+  ExcelSheet.Cells(9, 8).Value = "20"
+  ExcelSheet.Cells(10, 8).Value = "20"
+  ExcelSheet.Cells(11, 8).Value = "20"
+  ExcelSheet.Cells(12, 8).Value = "20"
+  ExcelSheet.Cells(13, 8).Value = "20"
+  ExcelSheet.Cells(14, 8).Value = "20"
+  ExcelSheet.Cells(15, 8).Value = "20"
+  ExcelSheet.Cells(16, 8).Value = "20"
+  ExcelSheet.Cells(17, 8).Value = "20"
+  ExcelSheet.Cells(18, 8).Value = "20"
+  ExcelSheet.Cells(19, 8).Value = "20"
+  ExcelSheet.Cells(20, 8).Value = "20"
+  ExcelSheet.Cells(21, 8).Value = "50"
+  ExcelSheet.Cells(22, 8).Value = "20"
+  ExcelSheet.Cells(23, 8).Value = "50"
+  ExcelSheet.Cells(24, 8).Value = "50"
+  'Столбец Исполнитель
+  ExcelSheet.Cells(7, 9).Value = "Исполнитель"
+  ExcelSheet.Cells(8, 9).Value = "Аналитик1"
+  ExcelSheet.Cells(9, 9).Value = "Аналитик1"
+  ExcelSheet.Cells(10, 9).Value = "Аналитик1"
+  ExcelSheet.Cells(11, 9).Value = "Аналитик1"
+  ExcelSheet.Cells(12, 9).Value = "Аналитик1"
+  ExcelSheet.Cells(13, 9).Value = "Аналитик1"
+  ExcelSheet.Cells(14, 9).Value = "Аналитик1"
+  ExcelSheet.Cells(15, 9).Value = "Аналитик1"
+  ExcelSheet.Cells(16, 9).Value = "Аналитик1"
+  ExcelSheet.Cells(17, 9).Value = "Аналитик1"
+  ExcelSheet.Cells(18, 9).Value = "Аналитик1"
+  ExcelSheet.Cells(19, 9).Value = "Аналитик1"
+  ExcelSheet.Cells(20, 9).Value = "Разработчик1"
+  ExcelSheet.Cells(21, 9).Value = "Разработчик1"
+  ExcelSheet.Cells(22, 9).Value = "Разработчик1"
+  ExcelSheet.Cells(23, 9).Value = "Тестировщик1"
+  ExcelSheet.Cells(24, 9).Value = "Подрядчик"
+  'Таблица скоринга
+  ExcelSheet.Cells(6, 11).Value = "Таблица скоринга"
+  ExcelSheet.Cells(7, 11).Value = "Группа ЦК"
+  ExcelSheet.Cells(7, 12).Value = "Функциональная область"
+  ExcelSheet.Cells(7, 13).Value = "Тег"
+  ExcelSheet.Cells(8, 11).Value = "20"
+  ExcelSheet.Cells(8, 12).Value = "20"
+  ExcelSheet.Cells(8, 13).Value = "20"
+
+  xlobject.ActiveWorkbook.Save
+  xlobject.DisplayAlerts = True
+  xlobject.ActiveWorkbook.Close True
+  xlobject.Quit 'Закрытие Excel файла
 End Sub
 
 ' Кнопка импортировать
@@ -289,21 +306,15 @@ Private Sub ImportButton_Click()
   TimeForSet = Timer
   'Запись времени в текстовик
   Call SetTimeForTxt(0, "Начало импорта ", True, False)
-  ' Создаем задачи по оценке ЦФТ
-  If Len(Trim(FileNameCFTTextBox.Text)) <> 0 Then
-    If CreateTasksByExcel(TBNumBIQ, CDate(tbStartDate.Value), FileNameCFTTextBox.Text) = False Then
-      MsgBox "Задача с такой система уже была создана"
-      Exit Sub
+  'Создаем задачи по оценке
+  For i = 0 To Me.FileNameExcel.ListCount - 1
+    If Len(Trim(Me.FileNameExcel.List(i))) <> 0 Then
+      If CreateTasksByExcel(TBNumBIQ, CDate(tbStartDate.Value), Me.FileNameExcel.List(i)) = False Then
+        MsgBox "Задача с такой система уже была создана"
+        Exit Sub
+      End If
     End If
-  End If
-
-'  ' Создаем задачи по оценки БИСквит
-'  If Len(Trim(FileNameManTextBox.Text)) <> 0 Then
-'    If CreateTasksByExcel(TBNumBIQ, CDate(tbStartDate.Value), FileNameManTextBox.Text) = False Then
-'      MsgBox "Задача с такой система уже была создана"
-'      Exit Sub
-'    End If
-'  End If
+  Next i
   'Запись времени в текстовик
   Call SetTimeForTxt(Timer - TimeForSet, "Конец импорта ", False, True)
   
@@ -359,7 +370,7 @@ Private Sub UserForm_Initialize()
   TBNumBIQ = "BIQ-5257"
   FileNameCFTTextBox = "C:\Users\Эрнест\Documents\GitHub\Diplom\test\Расшифровка ЭО BIQ5257.xlsx"
   'FileNameCFTTextBox = "d:\info\Эрнест\Diplom\test\Расшифровка ЭО BIQ5257.xlsx"
-  FileNameManTextBox = "C:\Users\Эрнест\Documents\GitHub\Diplom\test\Расшифровка ЭО BIQ5257(1).xlsx"
+  FileNameManTextBox = "C:\Users\Эрнест\Documents\GitHub\Diplom\test\Расшифровка ЭО BIQ5230.xlsx"
   TBNumBIQFDelete = 5257
   
 End Sub
@@ -680,41 +691,48 @@ Sub FillResources(TaskGroupCK, FuncArea, TaskTeg, SystemCode, IndexTaskFirst, In
       If (BiqTask.id >= IndexTaskFirst And BiqTask.id <= IndexTaskLast) Then
         If (BiqTask.id = NumMainTask) Then
           MaxScoreRes = 0
+          BestDate = "30.12.2030 10:00:00"
           For Each Res In ActiveProject.Resources
             ScoreRes = 0
-            'Условия жесткие
-            If ((Res.GetField(FieldID:=projectField_System1) = SystemCode) Or (Res.GetField(FieldID:=projectField_System2) = SystemCode)) Then
-              If (Res.GetField(FieldID:=projectField_ResGroup) = TaskActor) Then
-                'Условия мягкие
-                'Проверка по группе
-                If (Res.GetField(FieldID:=projectField_ResGroupCk) = TaskGroupCK) Then
-                  ScoreRes = ScoreRes + ScoreTaskGroupCK
-                End If
-                'Проверка по тегу
-                If (TaskTeg = "" Or Res.GetField(FieldID:=projectField_Teg) = TaskTeg) Then
-                  ScoreRes = ScoreRes + ScoreTaskTeg
-                End If
-                'Проверка по Функциональной области
-                If ((Res.GetField(FieldID:=projectField_FuncArea1) = FuncArea) Or (Res.GetField(FieldID:=projectField_FuncArea2) = FuncArea) Or (Res.GetField(FieldID:=projectField_FuncArea3) = FuncArea)) Then
-                  ScoreRes = ScoreRes + ScoreFuncArea
-                End If
+            'Условие по типу работы
+            If (Res.GetField(FieldID:=projectField_ResGroup) = TaskActor) Then
+              'Поиск даты на главной задаче
+              NewDate = SearchMainTaskStartDate(IndexTaskFirst, IndexTaskLast, Res.id, BiqTask.Start, BiqTask.Finish)
+              If BestDate > NewDate Then
+                BestDate = NewDate
+                ScoreRes = ScoreRes + 50
+              End If
+              If ScoreRes >= MaxScoreRes Then
+                Percent = BiqTask.Assignments(1).Units
+                TaskActorId = Res.id
+                MaxScoreRes = ScoreRes
               End If
             End If
+            'If ((Res.GetField(FieldID:=projectField_System1) = SystemCode) Or (Res.GetField(FieldID:=projectField_System2) = SystemCode)) Then
+            '
+            '    'Условия мягкие
+            '    'Проверка по группе
+            '    If (Res.GetField(FieldID:=projectField_ResGroupCk) = TaskGroupCK) Then
+            '      ScoreRes = ScoreRes + ScoreTaskGroupCK
+            '    End If
+            '    'Проверка по тегу
+            '    If (TaskTeg = "" Or Res.GetField(FieldID:=projectField_Teg) = TaskTeg) Then
+            '      ScoreRes = ScoreRes + ScoreTaskTeg
+            '    End If
+            '    'Проверка по Функциональной области
+            '    If ((Res.GetField(FieldID:=projectField_FuncArea1) = FuncArea) Or (Res.GetField(FieldID:=projectField_FuncArea2) = FuncArea) Or (Res.GetField(FieldID:=projectField_FuncArea3) = FuncArea)) Then
+            '      ScoreRes = ScoreRes + ScoreFuncArea
+            '    End If
+            'End If
             'Проверка скорринга текущего ресурса с максимальным
-            If ScoreRes > MaxScoreRes Then
-              Percent = BiqTask.Assignments(1).Units
-              TaskActorId = Res.id
-              MaxScoreRes = ScoreRes
-            End If
           Next Res
-          'Поиск даты на главной задаче
-          CurDate = BiqTask.Start
-          BiqTask.Start = SearchMainTaskStartDate(IndexTaskFirst, IndexTaskLast, TaskActorId, BiqTask.Start, BiqTask.Finish, Percent)
-          If CurDate <> BiqTask.Start Then
-            MsgBox "Главная задача по " & TaskActor & " " & BiqTask.name & " начинается с " & BiqTask.Start
-          End If
           'Запись в главную задачу
           Call SetTaskResProcent(BiqTask, TaskActorId, Percent)
+          CurDate = BiqTask.Start
+          BiqTask.Start = SearchMainTaskStartDate(IndexTaskFirst, IndexTaskLast, TaskActorId, BiqTask.Start, BiqTask.Finish)
+          'If CurDate <> BiqTask.Start Then
+          '  MsgBox "Главная задача по " & TaskActor & " " & BiqTask.name & " начинается с " & BiqTask.Start
+          'End If
           Exit For
         End If
       End If
@@ -738,7 +756,7 @@ Sub FillResources(TaskGroupCK, FuncArea, TaskTeg, SystemCode, IndexTaskFirst, In
 End Sub
 
 'Поиск Даты на главной задаче
-Public Function SearchMainTaskStartDate(IndexTaskFirst, IndexTaskLast, TaskActorId, StartDate, FinishDate, Percent) As Date
+Public Function SearchMainTaskStartDate(IndexTaskFirst, IndexTaskLast, TaskActorId, StartDate, FinishDate) As Date
   Dim resAss  As Assignment
   Dim Res     As Resource
   Dim assTask As Task
@@ -805,7 +823,7 @@ Public Function SearchSideTaskStartDate(IndexTaskFirst, IndexTaskLast, TaskActor
           Next resAss
         End If
       Next Res
-      If 8 - TimePerest >= Percent * 8 Then
+      If TimePerest >= 7 Then
         Exit For
       End If
       If (CurrentDate = CurrentDateNew + DurationDays) Then
@@ -1061,7 +1079,7 @@ Sub InitFieldConst()
 
 End Sub
 
-'Выбор оценки по ЦФТ
+'Выбор оценки для импорта
 Private Sub GetExcelFileCFTButton_Click()
   FileNameCFTTextBox.Text = ShowGetOpenDialog()
   If (TBNumBIQ.Text = "") Then
@@ -1069,12 +1087,24 @@ Private Sub GetExcelFileCFTButton_Click()
   End If
 End Sub
 
-'Выбор оценки по БИСквиту
+'Выбор оценка без справочника
 Private Sub GetExcelFileBISButton_Click()
   FileNameManTextBox.Text = ShowGetOpenDialog()
-    If (TBNumBIQ.Text = "") Then
-      TBNumBIQ.Text = GetBiqNum(FileNameManTextBox.Text)
-    End If
+End Sub
+
+'Выбор оценки для импорта
+Private Sub GetExcelFile_Click()
+  FileNameExcel.Clear
+  Call ShowGetOpenDialogMulti
+  If (TBNumBIQ.Text = "") Then
+    TBNumBIQ.Text = GetBiqNum(FileNameCFTTextBox.Text)
+  End If
+End Sub
+
+'Выбор оценка без справочника
+Private Sub GetExcelFileWithOut_Click()
+  FileNameExcelWithOut.Clear
+  Call ShowGetOpenDialogMultiCreateDesc
 End Sub
 
 'Номер оценки из файла
@@ -1102,9 +1132,10 @@ Public Function ShowGetOpenDialog() As String
   xlObj.Visible = False
   Set fd = xlObj.Application.FileDialog(msoFileDialogFilePicker)
   With fd
-    .Title = "Выберите необходимый файл" 'Название проводника
-    .Filters.Add "Excel", "*.xls,*.xlsx" 'Фильтры для отоброжения файлов
-    .AllowMultiSelect = False            'Только один файл
+    .Title = "Выберите необходимый файл"  'Название проводника
+    .Filters.Add "Excel", "*.xls,*.xlsx"  'Фильтры для отоброжения файлов
+    .AllowMultiSelect = False             'Только один файл
+    .InitialFileName = ActiveProject.Path 'Открытие проводника в текущей директории
     If .Show = False Then
       Set xlObj = Nothing
       Exit Function
@@ -1114,6 +1145,60 @@ Public Function ShowGetOpenDialog() As String
   Set xlObj = Nothing
   
 End Function 'ShowGetOpenDialog
+
+'Функция открытия проводника для выбора файла
+Public Function ShowGetOpenDialogMulti() As String
+  Dim xlObj As Excel.Application
+  Dim fd As Office.FileDialog
+  Set xlObj = New Excel.Application
+  xlObj.Visible = False
+  Set fd = xlObj.Application.FileDialog(msoFileDialogFilePicker)
+  With fd
+    .Title = "Выберите необходимый файл"  'Название проводника
+    .Filters.Add "Excel", "*.xls,*.xlsx"  'Фильтры для отоброжения файлов
+    .AllowMultiSelect = True              'Только один файл
+    .InitialFileName = ActiveProject.Path 'Открытие проводника в текущей директории
+    If .Show = False Then
+      Set xlObj = Nothing
+      Exit Function
+    End If
+    For NumPath = 1 To .SelectedItems.Count
+      Newpath = .SelectedItems(NumPath)
+      With Me.FileNameExcel
+        .AddItem Newpath
+      End With
+    Next
+  End With
+  Set xlObj = Nothing
+  
+End Function 'ShowGetOpenDialogMulti
+
+'Функция открытия проводника для выбора файла
+Public Function ShowGetOpenDialogMultiCreateDesc() As String
+  Dim xlObj As Excel.Application
+  Dim fd As Office.FileDialog
+  Set xlObj = New Excel.Application
+  xlObj.Visible = False
+  Set fd = xlObj.Application.FileDialog(msoFileDialogFilePicker)
+  With fd
+    .Title = "Выберите необходимый файл"  'Название проводника
+    .Filters.Add "Excel", "*.xls,*.xlsx"  'Фильтры для отоброжения файлов
+    .AllowMultiSelect = True              'Только один файл
+    .InitialFileName = ActiveProject.Path 'Открытие проводника в текущей директории
+    If .Show = False Then
+      Set xlObj = Nothing
+      Exit Function
+    End If
+    For NumPath = 1 To .SelectedItems.Count
+      Newpath = .SelectedItems(NumPath)
+      With Me.FileNameExcelWithOut
+        .AddItem Newpath
+      End With
+    Next
+  End With
+  Set xlObj = Nothing
+  
+End Function 'ShowGetOpenDialogMultiCreateDesc
 
 'Удаление всех задач с нулем часов
 Sub DeleteAllZeroTasks(IndexTaskFirst, IndexTaskLast)
