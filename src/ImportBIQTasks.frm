@@ -1,10 +1,10 @@
 VERSION 5.00
 Begin {C62A69F0-16DC-11CE-9E98-00AA00574A4F} ImportBIQTasks 
    Caption         =   "Перенос BIQ задач "
-   ClientHeight    =   8790.001
+   ClientHeight    =   8265.001
    ClientLeft      =   120
    ClientTop       =   465
-   ClientWidth     =   11925
+   ClientWidth     =   10455
    OleObjectBlob   =   "ImportBIQTasks.frx":0000
    StartUpPosition =   1  'CenterOwner
 End
@@ -13,6 +13,13 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
+
+
+
+
+
+
+
 
 
 
@@ -73,6 +80,7 @@ Private Sub CreateManual_Click()
  'End If
 End Sub
 
+'Процедура заполнения полей
 Sub FillDescExcel(Index)
   PathToExc = Me.FileNameExcelWithOut.List(Index)
   Set xlobject = CreateObject("Excel.Application")
@@ -99,22 +107,22 @@ Sub FillDescExcel(Index)
   ExcelSheet.Cells(2, 1).Value = "Функциональная область"
   ExcelSheet.Cells(3, 1).Value = "Тег"
   ExcelSheet.Cells(1, 2).Formula = "=Оценка!C6"
-  ExcelSheet.Cells(1, 2).Interior.Color = RGB(220, 230, 241)
   ExcelSheet.Cells(2, 2).Formula = "=Оценка!C7"
-  ExcelSheet.Cells(2, 2).Interior.Color = RGB(220, 230, 241)
   ExcelSheet.Cells(3, 2).Value = " "
-  ExcelSheet.Cells(3, 2).Interior.Color = RGB(220, 230, 241)
   ExcelSheet.Cells(1, 3).Formula = "=Оценка!C1"
-  ExcelSheet.Cells(1, 3).Interior.Color = RGB(220, 230, 241)
   ExcelSheet.Cells(2, 3).Formula = "=Оценка!C2"
-  ExcelSheet.Cells(2, 3).Interior.Color = RGB(220, 230, 241)
-  ExcelSheet.Cells(2, 4).Value = "JIRACFT"
-  ExcelSheet.Cells(2, 4).Interior.Color = RGB(220, 230, 241)
-  ExcelSheet.Cells(2, 5).Value = "25"
-  ExcelSheet.Cells(2, 5).Interior.Color = RGB(220, 230, 241)
+  ExcelSheet.Cells(2, 4).FormulaR1C1 = "IF(R[0][-1]=""ЦФТ"";""JIRACFT"";""JIRABIS"")"
+  ExcelSheet.Cells(2, 5).FormulaR1C1 = "If(R[0][-2]=""ЦФТ"";""25"";""25"")"
   ExcelSheet.Cells(6, 1).Value = "Таблица задач"
   ExcelSheet.Cells(7, 1).Value = "Номер задачи"
   'Формат ячеек
+  ExcelSheet.Cells(1, 2).Interior.Color = RGB(220, 230, 241)
+  ExcelSheet.Cells(2, 2).Interior.Color = RGB(220, 230, 241)
+  ExcelSheet.Cells(3, 2).Interior.Color = RGB(220, 230, 241)
+  ExcelSheet.Cells(1, 3).Interior.Color = RGB(220, 230, 241)
+  ExcelSheet.Cells(2, 3).Interior.Color = RGB(220, 230, 241)
+  ExcelSheet.Cells(2, 4).Interior.Color = RGB(220, 230, 241)
+  ExcelSheet.Cells(2, 5).Interior.Color = RGB(220, 230, 241)
   ExcelSheet.Range("A7:I24").Borders.LineStyle = True
   ExcelSheet.Cells(1, 3).WrapText = True
   For j = 1 To 17
@@ -171,7 +179,7 @@ Sub FillDescExcel(Index)
   ExcelSheet.Cells(21, 3).Value = "Собственная разработка"
   ExcelSheet.Cells(22, 3).Value = "Поддержка предварительного тестирования"
   ExcelSheet.Cells(23, 3).Value = "Оценка тестировщика"
-  ExcelSheet.Cells(24, 3).Value = "Оценка подрядчика"
+  ExcelSheet.Cells(24, 3).Value = "Разработка"
   'Столбец Предшественники
   ExcelSheet.Cells(7, 4).Value = "Предшественники"
   ExcelSheet.Cells(8, 4).Value = ""
@@ -299,7 +307,7 @@ Sub FillDescExcel(Index)
   xlobject.DisplayAlerts = True
   xlobject.ActiveWorkbook.Close True
   xlobject.Quit 'Закрытие Excel файла
-End Sub
+End Sub 'FillDescExcel
 
 ' Кнопка импортировать
 Private Sub ImportButton_Click()
@@ -368,10 +376,8 @@ Private Sub UserForm_Initialize()
   tbFieldHoursTest = 10
   tbFieldHoursPodr = 20
   TBNumBIQ = "BIQ-5257"
-  FileNameCFTTextBox = "C:\Users\Эрнест\Documents\GitHub\Diplom\test\Расшифровка ЭО BIQ5257.xlsx"
-  'FileNameCFTTextBox = "d:\info\Эрнест\Diplom\test\Расшифровка ЭО BIQ5257.xlsx"
-  FileNameManTextBox = "C:\Users\Эрнест\Documents\GitHub\Diplom\test\Расшифровка ЭО BIQ5230.xlsx"
   TBNumBIQFDelete = 5257
+  NumPlanImp = 360
   
 End Sub
 
@@ -392,21 +398,23 @@ Public Function CreateTasksByExcel(NumBIQ, StartDate, ExcelFileName) As Boolean
     xlobject.Quit 'Закрытие Excel файла
     Exit Function
   End If
-  
+
   'Интересует 4 лист оценки - технический лист для данного функционала
   Set ExcelSheet = xlobject.ActiveWorkbook.Sheets(4)
   
   ' Получаем данные о задаче
-  BIQName = ExcelSheet.Cells(1, 3)    'Название BIQ
-  SystemCode = ExcelSheet.Cells(2, 3) 'Система
-  TaskType = ExcelSheet.Cells(2, 4)   'Оцениваемая система ЦФТ
-  ITService = ExcelSheet.Cells(2, 5)  'ИТ-Сервис
-  TaskGroupCK = ExcelSheet.Cells(1, 2) 'Группа ЦК
-  FuncArea = ExcelSheet.Cells(2, 2)   'Функциональная область
-  TaskTeg = ExcelSheet.Cells(3, 2)    'Тэг
+  BIQName = ExcelSheet.Cells(1, 3)           'Название BIQ
+  SystemCode = ExcelSheet.Cells(2, 3)        'Система
+  TaskType = ExcelSheet.Cells(2, 4)          'Оцениваемая система ЦФТ
+  ITService = ExcelSheet.Cells(2, 5)         'ИТ-Сервис
+  TaskGroupCK = ExcelSheet.Cells(1, 2)       'Группа ЦК
+  FuncArea = ExcelSheet.Cells(2, 2)          'Функциональная область
+  TaskTeg = ExcelSheet.Cells(3, 2)           'Тэг
   ScoreTaskGroupCK = ExcelSheet.Cells(8, 11) 'Скоринг Группа ЦК
-  ScoreFuncArea = ExcelSheet.Cells(8, 12)   'Скоринг Функциональная область
-  ScoreTaskTeg = ExcelSheet.Cells(8, 13)    'Скоринг Тэг
+  ScoreFuncArea = ExcelSheet.Cells(8, 12)    'Скоринг Функциональная область
+  ScoreTaskTeg = ExcelSheet.Cells(8, 13)     'Скоринг Тэг
+  'Jira-ID из Экспресс-оценки
+  NumBIQ = Trim(Mid(LTrim(BIQName), 1, InStr(1, LTrim(BIQName), " ") - 1))
   'Пытаемся найти главную задачу по BIQ
   BiqTaskID = 0
   For Each BiqTask In ActiveProject.Tasks
@@ -415,11 +423,13 @@ Public Function CreateTasksByExcel(NumBIQ, StartDate, ExcelFileName) As Boolean
     End If
   Next BiqTask
   'Поиск задачи с одиннаковой системой
-  If SearchIdentBIQ(TaskType) = True Then
-    If MsgBox("Такая задача уже есть в системе, продолжить добавление?", vbYesNo, "Добавление") = vbNo Then
-      xlobject.Quit 'Закрытие Excel файла
-      CreateTasksByExcel = True
-      Exit Function
+  If SearchIdentBIQ(NumBIQ) = True Then
+    If CheckBox1.Value = False Then
+      If MsgBox("Такая задача уже есть в системе, продолжить добавление?", vbYesNo, "Добавление") = vbNo Then
+        xlobject.Quit 'Закрытие Excel файла
+        CreateTasksByExcel = True
+        Exit Function
+      End If
     End If
   Else
     BiqTaskID = 0
@@ -440,7 +450,8 @@ Public Function CreateTasksByExcel(NumBIQ, StartDate, ExcelFileName) As Boolean
   End If
   
   FirstTask = True
-  For i = 8 To 24
+  i = 8
+  Do
     'Пропускаем строчки Итого и с пустым наименованием
     If Len(Trim(ExcelSheet.Cells(i, 3))) <> 0 Then
       TypeWork = ExcelSheet.Cells(i, 5) 'Тип работ
@@ -453,7 +464,8 @@ Public Function CreateTasksByExcel(NumBIQ, StartDate, ExcelFileName) As Boolean
       TaskHours = ExcelSheet.Cells(i, 7) 'Время задачи
       Call AddNewTask(False, FirstTask, StartDate, "", TaskType, TaskName, TaskHours, BiqTaskID, True, ITService, TypeWork, TaskActor, Index, IndexTaskFirst, IndexTaskLast)
     End If
-  Next i
+    i = i + 1
+  Loop While (ExcelSheet.Cells(i, 1)) <> ""
 '  'Оценка тестировщика
 '  TypeWork = 510 'Тип работ
 '  TaskActor = "Тестировщик2" 'Исполнитель
@@ -490,10 +502,10 @@ Public Function CreateTasksByExcel(NumBIQ, StartDate, ExcelFileName) As Boolean
 End Function
 
 'Поиск задачи второго уровня с одиннаковой системой
-Public Function SearchIdentBIQ(SystemCode) As Boolean
+Public Function SearchIdentBIQ(NumBIQ) As Boolean
   Dim BiqTask As Task
   For Each BiqTask In ActiveProject.Tasks
-    If BiqTask.GetField(FieldID:=projectField_JiraProjName) = SystemCode Then
+    If BiqTask.GetField(FieldID:=projectField_JirID) = NumBIQ Then
       SearchIdentBIQ = True
       Exit Function
     End If
@@ -698,11 +710,8 @@ Sub FillResources(TaskGroupCK, FuncArea, TaskTeg, SystemCode, IndexTaskFirst, In
             If (Res.GetField(FieldID:=projectField_ResGroup) = TaskActor) Then
               'Поиск даты на главной задаче
               NewDate = SearchMainTaskStartDate(IndexTaskFirst, IndexTaskLast, Res.id, BiqTask.Start, BiqTask.Finish)
-              If BestDate > NewDate Then
+              If BestDate > NewDate And BiqTask.Assignments(1).Resource.name <> Res.name Then
                 BestDate = NewDate
-                ScoreRes = ScoreRes + 50
-              End If
-              If ScoreRes >= MaxScoreRes Then
                 Percent = BiqTask.Assignments(1).Units
                 TaskActorId = Res.id
                 MaxScoreRes = ScoreRes
@@ -727,9 +736,9 @@ Sub FillResources(TaskGroupCK, FuncArea, TaskTeg, SystemCode, IndexTaskFirst, In
             'Проверка скорринга текущего ресурса с максимальным
           Next Res
           'Запись в главную задачу
-          Call SetTaskResProcent(BiqTask, TaskActorId, Percent)
-          CurDate = BiqTask.Start
+          'CurDate = BiqTask.Star
           BiqTask.Start = SearchMainTaskStartDate(IndexTaskFirst, IndexTaskLast, TaskActorId, BiqTask.Start, BiqTask.Finish)
+          Call SetTaskResProcent(BiqTask, TaskActorId, Percent)
           'If CurDate <> BiqTask.Start Then
           '  MsgBox "Главная задача по " & TaskActor & " " & BiqTask.name & " начинается с " & BiqTask.Start
           'End If
@@ -763,8 +772,8 @@ Public Function SearchMainTaskStartDate(IndexTaskFirst, IndexTaskLast, TaskActor
   SearchMainTaskStartDate = StartDate
   'Длительность задачи в большую сторону
   DurationDays = WorksheetFunction.RoundUp(FinishDate - StartDate, 0)
-  'Цикл с начала планирования до плюс 120 дней
-  For CurrentDateNew = StartDate To StartDate + 120
+  'Цикл с начала планирования до плюс NumPlanImp дней
+  For CurrentDateNew = StartDate To StartDate + NumPlanImp
     'Цикл проверки по длительности
     For CurrentDate = CurrentDateNew To CurrentDateNew + DurationDays
       TimePerest = 0
@@ -800,7 +809,7 @@ Public Function SearchSideTaskStartDate(IndexTaskFirst, IndexTaskLast, TaskActor
   Dim resAss  As Assignment
   Dim Res     As Resource
   Dim assTask As Task
-  SearchSideTaskStartDate = StartDate
+  'SearchSideTaskStartDate = StartDate
   'Длительность задачи в большую сторону
   DurationDays = WorksheetFunction.RoundUp(FinishDate - StartDate, 0)
   'Цикл с начала планирования до плюс 120 дней
